@@ -168,6 +168,86 @@ button {
   margin-top: 10px;
 }
 
+.section-subtitle {
+  font-size: 14px;
+  color: var(--gray-text);
+  margin: 22px 0 10px;
+  border-top: 1px dashed var(--gray-border);
+  padding-top: 16px;
+}
+
+.cube3d-panel {
+  background: var(--gray-bg);
+  border: 1px solid var(--gray-border);
+  border-radius: 10px;
+  padding: 14px;
+}
+
+.cube3d-canvas-wrap {
+  width: 100%;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.cube3d-canvas-wrap canvas {
+  display: block;
+}
+
+.cube3d-controls {
+  margin-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cube3d-controls label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--gray-text);
+}
+
+.cube3d-controls input[type="range"] {
+  flex: 1;
+  accent-color: var(--blue);
+}
+
+.cube3d-controls label span {
+  width: 48px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #1e293b;
+}
+
+.cube3d-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.cube3d-presets button {
+  border: 1px solid var(--gray-border);
+  background: #fff;
+  color: var(--blue);
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  transition: all .15s;
+}
+
+.cube3d-presets button:hover {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.cube3d-hint {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--placeholder);
+}
+
 .diagram-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

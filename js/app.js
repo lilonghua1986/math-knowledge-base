@@ -48,6 +48,7 @@ function renderFilterRow() {
 
 // ---------- 渲染：主内容区 ----------
 function render() {
+  if (window.destroyCubeSection3D) window.destroyCubeSection3D();
   renderFilterRow();
 
   if (!state.filter) {
@@ -133,7 +134,12 @@ function renderDetail(subTopic) {
       html += `<p class="placeholder-note">内容待补充</p>`;
     } else {
       html += `<div class="intro">${t.contentHtml || ""}</div>`;
+      if (t.interactive === "cube-section") {
+        html += `<h3 class="section-subtitle">动手切一刀：拖动滑块观察截面变化</h3>`;
+        html += `<div class="cube3d-panel" id="cube3d-mount"></div>`;
+      }
       if (t.diagramType === "cube" && Array.isArray(t.diagrams)) {
+        html += `<h3 class="section-subtitle">几种典型截面归纳</h3>`;
         html += renderCubeDiagrams(t.diagrams);
       }
     }
@@ -141,6 +147,15 @@ function renderDetail(subTopic) {
   });
 
   contentEl.innerHTML = html;
+
+  const cube3dMount = document.getElementById("cube3d-mount");
+  if (cube3dMount) {
+    if (window.initCubeSection3D) {
+      window.initCubeSection3D(cube3dMount);
+    } else {
+      window.addEventListener("cube3d-ready", () => window.initCubeSection3D(cube3dMount), { once: true });
+    }
+  }
 
   document.getElementById("backLink").addEventListener("click", () => {
     state.openSub = null;
