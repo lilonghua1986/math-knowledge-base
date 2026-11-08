@@ -64,11 +64,13 @@ const TOPICS_DATA = [
   {
     "id": "cone-cross-section",
     "title": "圆锥的切面",
-    "textbooks": ["必修2"],
-    "knowledgeCategory": "立体几何",
-    "topicGroup": "立体几何的切面问题",
+    "textbooks": ["选择性必修2"],
+    "knowledgeCategory": "解析几何",
+    "topicGroup": "圆锥曲线",
     "subTopic": "圆锥的切面",
-    "status": "placeholder",
-    "summary": "内容待补充。"
+    "status": "ready",
+    "interactive": "cone-section",
+    "summary": "用平面去切两个共顶点、开口相对的圆锥（双圆锥），随平面位置和倾斜角不同，截线依次是圆、椭圆、抛物线、双曲线——这就是“圆锥曲线”名字的来源。",
+    "contentHtml": "<p>把两个圆锥顶点对顶点地拼在一起（叫<strong>双圆锥</strong>），用一个平面去截它，截线的形状只由<strong>平面与圆锥轴的夹角</strong>和圆锥本身的<strong>母线与轴的夹角（半顶角）</strong>这两个角的大小关系决定，与平面离顶点的远近无关（远近只影响截线的大小，不影响截线的类型）：</p><ul><li><strong>平面垂直于轴</strong>（夹角 90°）——截线是<strong>圆</strong>；</li><li><strong>平面倾斜，但夹角仍大于半顶角</strong>，只切到一个圆锥——截线是<strong>椭圆</strong>；</li><li><strong>平面倾斜角正好等于半顶角</strong>，也就是平面与某一条母线平行——截线是<strong>抛物线</strong>（这时截线是一条不封闭的曲线）；</li><li><strong>平面倾斜角小于半顶角</strong>，平面同时切到上下两个圆锥——截线是<strong>双曲线</strong>的两支。</li></ul><p>特别地，如果平面恰好经过公共顶点，截线会退化成一个点，或者两条相交的直线——这是以上几种曲线的\"临界\"情形。</p>"
   }
 ];

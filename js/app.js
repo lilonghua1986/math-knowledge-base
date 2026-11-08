@@ -1,6 +1,6 @@
 // ---------- 配置 ----------
 const TEXTBOOKS = ["必修1", "必修2", "选择性必修1", "选择性必修2", "选择性必修3"];
-const KNOWLEDGE_CATEGORIES = ["立体几何"]; // 后续逐步补充其它知识点大类
+const KNOWLEDGE_CATEGORIES = ["立体几何", "解析几何"]; // 后续逐步补充其它知识点大类
 
 // ---------- 状态 ----------
 const state = {
@@ -49,6 +49,7 @@ function renderFilterRow() {
 // ---------- 渲染：主内容区 ----------
 function render() {
   if (window.destroyCubeSection3D) window.destroyCubeSection3D();
+  if (window.destroyConeSection3D) window.destroyConeSection3D();
   renderFilterRow();
 
   if (!state.filter) {
@@ -136,7 +137,11 @@ function renderDetail(subTopic) {
       html += `<div class="intro">${t.contentHtml || ""}</div>`;
       if (t.interactive === "cube-section") {
         html += `<h3 class="section-subtitle">动手切一刀：拖动滑块观察截面变化</h3>`;
-        html += `<div class="cube3d-panel" id="cube3d-mount"></div>`;
+        html += `<div class="demo3d-panel" id="cube3d-mount"></div>`;
+      }
+      if (t.interactive === "cone-section") {
+        html += `<h3 class="section-subtitle">动手切一刀：拖动滑块观察四种截线</h3>`;
+        html += `<div class="demo3d-panel" id="cone3d-mount"></div>`;
       }
       if (t.diagramType === "cube" && Array.isArray(t.diagrams)) {
         html += `<h3 class="section-subtitle">几种典型截面归纳</h3>`;
@@ -154,6 +159,15 @@ function renderDetail(subTopic) {
       window.initCubeSection3D(cube3dMount);
     } else {
       window.addEventListener("cube3d-ready", () => window.initCubeSection3D(cube3dMount), { once: true });
+    }
+  }
+
+  const cone3dMount = document.getElementById("cone3d-mount");
+  if (cone3dMount) {
+    if (window.initConeSection3D) {
+      window.initConeSection3D(cone3dMount);
+    } else {
+      window.addEventListener("cone3d-ready", () => window.initConeSection3D(cone3dMount), { once: true });
     }
   }
 

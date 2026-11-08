@@ -4,6 +4,10 @@
 // 这样双击打开 index.html（file:// 协议）也能正常运行。
 // 对外暴露 window.initCubeSection3D(container) / window.destroyCubeSection3D()，
 // 供 js/app.js 调用。
+// 整体包一层 IIFE：经典 <script> 标签共享同一个全局作用域，
+// 多个演示文件若都用顶层 let/const 声明同名变量（如 renderer/scene），
+// 会直接抛 SyntaxError 导致后加载的脚本整体失效，所以每个演示文件都要自建作用域。
+(function () {
 
 // ---------- 几何：正方体（顶点 (±1,±1,±1)） ----------
 const CUBE_VERTICES = [];
@@ -152,13 +156,13 @@ function initCubeSection3D(container) {
   destroyCubeSection3D();
 
   if (typeof THREE === "undefined" || typeof THREE.OrbitControls !== "function") {
-    container.innerHTML = `<p class="cube3d-hint">3D 组件加载失败（可能是网络问题，三维库未能加载），请检查网络后刷新页面重试。</p>`;
+    container.innerHTML = `<p class="demo3d-hint">3D 组件加载失败（可能是网络问题，三维库未能加载），请检查网络后刷新页面重试。</p>`;
     return;
   }
 
   container.innerHTML = `
-    <div class="cube3d-canvas-wrap"></div>
-    <div class="cube3d-controls">
+    <div class="demo3d-canvas-wrap"></div>
+    <div class="demo3d-controls">
       <label>法向俯仰角 θ
         <input type="range" id="c3d-theta" min="0" max="180" step="0.5" value="54.7356">
         <span id="c3d-theta-val"></span>
@@ -171,17 +175,17 @@ function initCubeSection3D(container) {
         <input type="range" id="c3d-offset" min="-100" max="100" step="1" value="0">
         <span id="c3d-offset-val"></span>
       </label>
-      <div class="cube3d-presets">
+      <div class="demo3d-presets">
         <button type="button" data-preset="triangle">过顶点（三角形）</button>
         <button type="button" data-preset="square">平行于底面（正方形）</button>
         <button type="button" data-preset="rect">对角切割（矩形）</button>
         <button type="button" data-preset="hexagon">垂直体对角线（正六边形）</button>
       </div>
-      <p class="cube3d-hint">拖动滑块改变切割平面；鼠标拖动旋转视角、滚轮缩放、右键拖动平移整个场景。</p>
+      <p class="demo3d-hint">拖动滑块改变切割平面；鼠标拖动旋转视角、滚轮缩放、右键拖动平移整个场景。</p>
     </div>
   `;
 
-  const canvasWrap = container.querySelector(".cube3d-canvas-wrap");
+  const canvasWrap = container.querySelector(".demo3d-canvas-wrap");
   const width = canvasWrap.clientWidth || 400;
   const height = Math.round(width * 0.72);
   canvasWrap.style.height = height + "px";
@@ -190,7 +194,7 @@ function initCubeSection3D(container) {
     renderer = new THREE.WebGLRenderer({ antialias: true });
   } catch (e) {
     renderer = null;
-    container.innerHTML = `<p class="cube3d-hint">当前浏览器无法启用 3D 效果（WebGL 不可用），请换一个浏览器或开启硬件加速后重试。下方仍可查看典型截面示意图。</p>`;
+    container.innerHTML = `<p class="demo3d-hint">当前浏览器无法启用 3D 效果（WebGL 不可用），请换一个浏览器或开启硬件加速后重试。下方仍可查看典型截面示意图。</p>`;
     return;
   }
 
@@ -316,7 +320,7 @@ function initCubeSection3D(container) {
     input.addEventListener("input", updateFromSliders)
   );
 
-  container.querySelectorAll(".cube3d-presets button").forEach((btn) => {
+  container.querySelectorAll(".demo3d-presets button").forEach((btn) => {
     btn.addEventListener("click", () => {
       const preset = PRESETS[btn.dataset.preset];
       thetaInput.value = preset.theta;
@@ -350,3 +354,5 @@ function initCubeSection3D(container) {
 window.initCubeSection3D = initCubeSection3D;
 window.destroyCubeSection3D = destroyCubeSection3D;
 window.dispatchEvent(new Event("cube3d-ready"));
+
+})();
