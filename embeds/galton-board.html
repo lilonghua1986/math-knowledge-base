@@ -1,0 +1,590 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta http-equiv="Content-Security-Policy" content="img-src 'self' data: blob: https://*.fbcontent.cn https://*.aliyuncs.com https://storage.googleapis.com; media-src 'self' data: blob: https://*.fbcontent.cn https://*.aliyuncs.com https://storage.googleapis.com;">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高尔顿板二项分布模拟器</title>
+    <!-- 引入 MathJax -->
+    <script src="https://metis-online.fbcontent.cn/metis-misc/MathJax-3.2.2/es5/tex-mml-chtml.js"></script>
+    <!-- 引入 Anime.js -->
+    <script src="https://metis-online.fbcontent.cn/metis-misc/zZZY40t7WJC7UdQCPACm.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #3b82f6;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --peg-color: #94a3b8;
+            --ball-color: #fbbf24;
+            --border-color: #334155;
+            --wood-color: #78350f;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 24px;
+            width: 95vw;
+            max-width: 1200px;
+            height: 90vh;
+            padding: 20px;
+        }
+
+        /* 左侧模拟区 */
+        .simulator-card {
+            background: var(--card-bg);
+            border-radius: 24px;
+            border: 1px solid var(--border-color);
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .board-container {
+            flex: 1;
+            position: relative;
+            margin: 20px;
+            border: 8px solid var(--wood-color);
+            border-radius: 12px;
+            background: #020617;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 右侧面板 */
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+
+        .panel-card {
+            background: var(--card-bg);
+            border-radius: 16px;
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+
+        h2 { font-size: 1.2rem; margin-bottom: 16px; color: var(--accent-color); }
+        .stat-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+        .stat-item {
+            background: rgba(15, 23, 42, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+        }
+        .stat-label { font-size: 0.75rem; color: var(--text-secondary); display: block; }
+        .stat-value { font-size: 1.1rem; font-weight: bold; font-variant-numeric: tabular-nums; }
+
+        /* 控制区 */
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        button {
+            padding: 10px;
+            border-radius: 8px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.2s;
+            background: #334155;
+            color: white;
+        }
+        button:hover { transform: translateY(-2px); filter: brightness(1.2); }
+        button:active { transform: scale(0.95); }
+        .btn-primary { background: var(--accent-color); }
+        .btn-danger { background: #ef4444; }
+        .btn-warning { background: #f59e0b; }
+
+        .slider-container {
+            margin-top: 8px;
+        }
+        .slider-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 4px;
+        }
+        input[type=range] {
+            width: 100%;
+            accent-color: var(--accent-color);
+            cursor: pointer;
+        }
+
+        /* 表格 */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            margin-top: 10px;
+        }
+        th, td {
+            text-align: left;
+            padding: 6px 4px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .bar-container {
+            width: 60px;
+            height: 8px;
+            background: #334155;
+            border-radius: 4px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .bar-fill { height: 100%; background: var(--accent-color); }
+
+        .formula-box {
+            font-size: 0.9rem;
+            text-align: center;
+            padding: 10px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+        }
+
+        /* 滚动条美化 */
+        .side-panel::-webkit-scrollbar { width: 6px; }
+        .side-panel::-webkit-scrollbar-track { background: transparent; }
+        .side-panel::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+    </style>
+<script type="application/json" id="fx-resource-config" data-fx-resource-runtime="2">{"chatId":"F949852832BF5DDEE5E577111FA7004A","env":"online","onlineUrl":"https://musk-online.fbcontent.cn/pub-musk-ai-studio/workflow/file/document/W3VX9uA9xvsaZ5FYU9Fr8B.html?v=1"}</script><script async src="https://www.feixianglaoshi.com/resource-runtime/v2.js" data-fx-resource-runtime="2"></script></head>
+<body>
+
+<div class="container">
+    <!-- 左侧模拟器 -->
+    <div class="simulator-card">
+        <div class="board-container" id="board">
+            <canvas id="canvas"></canvas>
+        </div>
+    </div>
+
+    <!-- 右侧面板 -->
+    <div class="side-panel">
+        <!-- 统计数据 -->
+        <div class="panel-card">
+            <h2>实验统计</h2>
+            <div class="stat-grid">
+                <div class="stat-item">
+                    <span class="stat-label">总球数</span>
+                    <span class="stat-value" id="total-balls">0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">最新落格</span>
+                    <span class="stat-value" id="last-bin">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">最多落点</span>
+                    <span class="stat-value" id="max-bin">-</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">实验均值</span>
+                    <span class="stat-value" id="exp-mean">0.000</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">理论均值</span>
+                    <span class="stat-value">5.000</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">实验方差</span>
+                    <span class="stat-value" id="exp-var">0.000</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">理论方差</span>
+                    <span class="stat-value">2.500</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 控制区 -->
+        <div class="panel-card">
+            <h2>控制面板</h2>
+            <div class="controls">
+                <div class="btn-group">
+                    <button class="btn-primary" id="btn-single">投入一个球</button>
+                    <button class="btn-warning" id="btn-batch">连续投球</button>
+                </div>
+                <div class="btn-group">
+                    <button class="btn-danger" id="btn-stop">停止</button>
+                    <button id="btn-reset">重置</button>
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>动画速度</span>
+                        <span id="speed-label">中</span>
+                    </div>
+                    <input type="range" id="speed-slider" min="1" max="10" value="5">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-header">
+                        <span>批量数量</span>
+                        <span id="batch-label">120 个</span>
+                    </div>
+                    <input type="range" id="batch-slider" min="10" max="500" step="10" value="120">
+                </div>
+            </div>
+        </div>
+
+        <!-- 理论公式与对比 -->
+        <div class="panel-card">
+            <h2>理论分布</h2>
+            <div class="formula-box">
+                \[ P(X=k) = \binom{10}{k} \cdot 0.5^{10} \]
+            </div>
+            <table id="prob-table">
+                <thead>
+                    <tr>
+                        <th>格</th>
+                        <th>理论概率</th>
+                        <th>实验频率</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body">
+                    <!-- JS 填充 -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    const board = document.getElementById('board');
+
+    // 配置
+    const ROWS = 10;
+    const BINS = ROWS + 1;
+    const PEG_RADIUS = 4;
+    const BALL_RADIUS = 5;
+    const BIN_MAX_VISUAL = 50; // 每个槽位视觉显示上限
+
+    let width, height;
+    let pegs = [];
+    let balls = [];
+    let binCounts = new Array(BINS).fill(0);
+    let totalBalls = 0;
+    let sumX = 0;
+    let sumX2 = 0;
+    let isRunning = false;
+    let batchTimer = null;
+
+    // 速度映射
+    const speedNames = ["极慢", "很慢", "慢", "较慢", "中", "较快", "快", "很快", "极快", "闪电"];
+    const speedValues = [1, 1.5, 2, 3, 4, 6, 8, 12, 20, 40];
+
+    // 理论概率 B(10, 0.5)
+    const theoreticalProbs = [
+        0.00097, 0.00977, 0.04395, 0.11719, 0.20508, 0.24609, 
+        0.20508, 0.11719, 0.04395, 0.00977, 0.00097
+    ];
+
+    function resize() {
+        width = board.clientWidth;
+        height = board.clientHeight;
+        canvas.width = width;
+        canvas.height = height;
+        initPegs();
+    }
+
+    function initPegs() {
+        pegs = [];
+        const startY = 60;
+        const rowSpacing = (height * 0.6) / ROWS;
+        const colSpacing = width / (ROWS + 2);
+
+        for (let r = 0; r < ROWS; r++) {
+            const rowY = startY + r * rowSpacing;
+            const rowWidth = (r + 1) * colSpacing;
+            const startX = (width - rowWidth) / 2 + colSpacing / 2;
+            for (let c = 0; c <= r; c++) {
+                pegs.push({
+                    x: startX + c * colSpacing,
+                    y: rowY
+                });
+            }
+        }
+    }
+
+    class Ball {
+        constructor() {
+            this.reset();
+        }
+
+        reset() {
+            this.x = width / 2;
+            this.y = 20;
+            this.row = -1;
+            this.targetX = width / 2;
+            this.bin = 0;
+            this.status = 'falling'; // falling, settled
+            this.path = [];
+            this.generatePath();
+        }
+
+        generatePath() {
+            let currentBin = 0;
+            for (let i = 0; i < ROWS; i++) {
+                const dir = Math.random() < 0.5 ? 0 : 1;
+                currentBin += dir;
+                this.path.push(dir);
+            }
+            this.finalBin = currentBin;
+        }
+
+        update(speed) {
+            if (this.status !== 'falling') return;
+
+            const rowSpacing = (height * 0.6) / ROWS;
+            const colSpacing = width / (ROWS + 2);
+            const startY = 60;
+
+            // 计算当前应该在第几行
+            const targetRow = Math.floor((this.y - startY + rowSpacing / 2) / rowSpacing);
+            
+            if (targetRow > this.row && targetRow < ROWS) {
+                this.row = targetRow;
+                // 碰到钉子，决定下一个 targetX
+                const dir = this.path[this.row];
+                const shift = dir === 0 ? -colSpacing / 2 : colSpacing / 2;
+                this.targetX += shift;
+            }
+
+            // 移动
+            this.y += speed;
+            this.x += (this.targetX - this.x) * 0.2;
+
+            // 落地判断
+            if (this.y > startY + ROWS * rowSpacing) {
+                this.status = 'settled';
+                addBallToBin(this.finalBin);
+            }
+        }
+
+        draw() {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, BALL_RADIUS, 0, Math.PI * 2);
+            ctx.fillStyle = varColor('--ball-color');
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = varColor('--ball-color');
+            ctx.fill();
+            ctx.shadowBlur = 0;
+        }
+    }
+
+    function addBallToBin(bin) {
+        binCounts[bin]++;
+        totalBalls++;
+        sumX += bin;
+        sumX2 += bin * bin;
+        updateStats(bin);
+    }
+
+    function updateStats(lastBin) {
+        document.getElementById('total-balls').textContent = totalBalls;
+        document.getElementById('last-bin').textContent = lastBin;
+        
+        let maxVal = -1, maxIdx = -1;
+        binCounts.forEach((count, i) => {
+            if (count > maxVal) { maxVal = count; maxIdx = i; }
+        });
+        document.getElementById('max-bin').textContent = maxIdx;
+
+        const mean = sumX / totalBalls;
+        const variance = (sumX2 / totalBalls) - (mean * mean);
+        document.getElementById('exp-mean').textContent = mean.toFixed(3);
+        document.getElementById('exp-var').textContent = Math.max(0, variance).toFixed(3);
+
+        updateTable();
+    }
+
+    function updateTable() {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
+        theoreticalProbs.forEach((p, i) => {
+            const expP = totalBalls === 0 ? 0 : binCounts[i] / totalBalls;
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${i}</td>
+                <td>${(p * 100).toFixed(1)}%</td>
+                <td>
+                    ${(expP * 100).toFixed(1)}%
+                    <div class="bar-container"><div class="bar-fill" style="width: ${expP * 100}%"></div></div>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    function drawBoard() {
+        ctx.clearRect(0, 0, width, height);
+
+        // 绘制钉子
+        ctx.fillStyle = varColor('--peg-color');
+        pegs.forEach(p => {
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, PEG_RADIUS, 0, Math.PI * 2);
+            // 金属光泽
+            const grad = ctx.createRadialGradient(p.x - 1, p.y - 1, 0, p.x, p.y, PEG_RADIUS);
+            grad.addColorStop(0, '#fff');
+            grad.addColorStop(0.4, varColor('--peg-color'));
+            grad.addColorStop(1, '#334155');
+            ctx.fillStyle = grad;
+            ctx.fill();
+        });
+
+        // 绘制槽位分割线
+        const colSpacing = width / (ROWS + 2);
+        const bottomY = height - 10;
+        const binTopY = height * 0.7;
+        ctx.strokeStyle = varColor('--border-color');
+        ctx.lineWidth = 2;
+        for (let i = 0; i <= BINS; i++) {
+            const x = (width - (BINS * colSpacing)) / 2 + i * colSpacing;
+            ctx.beginPath();
+            ctx.moveTo(x, binTopY);
+            ctx.lineTo(x, bottomY);
+            ctx.stroke();
+        }
+
+        // 绘制槽内堆叠的小球 (从下往上堆)
+        binCounts.forEach((count, binIdx) => {
+            const xBase = (width - (BINS * colSpacing)) / 2 + binIdx * colSpacing + colSpacing / 2;
+            const drawCount = Math.min(count, BIN_MAX_VISUAL);
+            
+            for (let i = 0; i < drawCount; i++) {
+                // 模拟沙堆效果：每层宽度略有不同，带随机偏移
+                const layer = Math.floor(i / 3);
+                const posInLayer = i % 3;
+                const offsetX = (posInLayer - 1) * (BALL_RADIUS * 1.2) + (Math.sin(i + binIdx) * 2);
+                const offsetY = layer * (BALL_RADIUS * 1.5);
+                
+                ctx.beginPath();
+                ctx.arc(xBase + offsetX, bottomY - BALL_RADIUS - offsetY, BALL_RADIUS, 0, Math.PI * 2);
+                ctx.fillStyle = varColor('--ball-color');
+                ctx.globalAlpha = 0.8;
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+            }
+
+            if (count > BIN_MAX_VISUAL) {
+                ctx.fillStyle = "#fff";
+                ctx.font = "10px Arial";
+                ctx.textAlign = "center";
+                ctx.fillText(`+${count - BIN_MAX_VISUAL}`, xBase, binTopY + 15);
+            }
+        });
+
+        // 绘制正在下落的小球
+        const speedIdx = document.getElementById('speed-slider').value - 1;
+        const speed = speedValues[speedIdx];
+        
+        balls = balls.filter(b => b.status === 'falling');
+        balls.forEach(b => {
+            b.update(speed);
+            b.draw();
+        });
+
+        requestAnimationFrame(drawBoard);
+    }
+
+    function varColor(name) {
+        return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    }
+
+    // 事件监听
+    document.getElementById('btn-single').onclick = () => {
+        balls.push(new Ball());
+    };
+
+    document.getElementById('btn-batch').onclick = () => {
+        if (isRunning) return;
+        isRunning = true;
+        const count = parseInt(document.getElementById('batch-slider').value);
+        let spawned = 0;
+        
+        const spawn = () => {
+            if (!isRunning || spawned >= count) {
+                isRunning = false;
+                return;
+            }
+            balls.push(new Ball());
+            spawned++;
+            // 随机延时制造“倒沙”效果
+            const delay = 50 + Math.random() * 150;
+            batchTimer = setTimeout(spawn, delay / (speedValues[document.getElementById('speed-slider').value - 1] / 4));
+        };
+        spawn();
+    };
+
+    document.getElementById('btn-stop').onclick = () => {
+        isRunning = false;
+        clearTimeout(batchTimer);
+        balls = [];
+    };
+
+    document.getElementById('btn-reset').onclick = () => {
+        isRunning = false;
+        clearTimeout(batchTimer);
+        balls = [];
+        binCounts.fill(0);
+        totalBalls = 0;
+        sumX = 0;
+        sumX2 = 0;
+        updateStats('-');
+        updateTable();
+    };
+
+    document.getElementById('speed-slider').oninput = (e) => {
+        document.getElementById('speed-label').textContent = speedNames[e.target.value - 1];
+    };
+
+    document.getElementById('batch-slider').oninput = (e) => {
+        document.getElementById('batch-label').textContent = e.target.value + " 个";
+    };
+
+    window.addEventListener('resize', resize);
+    
+    // 初始化
+    resize();
+    updateTable();
+    requestAnimationFrame(drawBoard);
+
+</script>
+
+</body>
+</html>
