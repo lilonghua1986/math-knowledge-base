@@ -1,0 +1,485 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>椭圆的定义 · 动态模型演示</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-tint: #eef4ff;
+            --accent: #f59e0b;
+            --text: #475569;
+            --heading: #1e293b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --placeholder: #94a3b8;
+            --card-bg: #ffffff;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            min-height: 640px;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 14px 24px;
+            background: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.15rem;
+            color: var(--heading);
+            font-weight: 700;
+        }
+
+        .formula-pill {
+            background: var(--primary-tint);
+            color: var(--primary);
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 40px 40px;
+            background-position: center;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .control-panel {
+            width: 300px;
+            background: var(--bg);
+            border-left: 1px solid var(--border);
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            overflow-y: auto;
+        }
+
+        .panel-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+
+        .panel-card h2 {
+            margin: 0 0 10px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--heading);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        .control-group + .control-group { margin-top: 12px; }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--heading);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .control-group label span { color: var(--primary); font-variant-numeric: tabular-nums; }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--primary);
+        }
+
+        .data-item {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.85rem;
+            margin-bottom: 6px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .data-item.total {
+            border-top: 1px dashed var(--border);
+            margin-top: 8px;
+            padding-top: 8px;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .data-item.sub { color: var(--placeholder); font-size: 0.8rem; }
+
+        .btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        button {
+            padding: 8px 10px;
+            border: 1px solid var(--primary);
+            background: var(--card-bg);
+            color: var(--primary);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            transition: all 0.15s;
+        }
+
+        button:hover { background: var(--primary); color: white; }
+        button.active { background: var(--primary); color: white; }
+
+        .def-list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 0.85rem;
+            line-height: 1.6;
+        }
+        .def-list li { margin-bottom: 4px; }
+        .def-list strong { color: var(--heading); }
+
+        .legend {
+            position: absolute;
+            bottom: 16px;
+            left: 16px;
+            background: rgba(255,255,255,0.92);
+            padding: 10px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            font-size: 0.78rem;
+            color: var(--text);
+            pointer-events: none;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 4px;
+        }
+        .legend-item:last-child { margin-bottom: 0; }
+
+        .dot { width: 10px; height: 10px; border-radius: 50%; flex: none; }
+        .line { width: 20px; height: 2px; flex: none; }
+
+        .hint {
+            font-size: 0.78rem;
+            color: var(--placeholder);
+            margin-top: auto;
+            padding-top: 4px;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>椭圆的定义：动态模型演示</h1>
+    <div class="formula-pill">|PF₁| + |PF₂| = 2a &nbsp;（2a &gt; |F₁F₂|）</div>
+</header>
+
+<div class="main-container">
+    <div id="canvas-container">
+        <canvas id="mainCanvas"></canvas>
+        <div class="legend">
+            <div class="legend-item"><div class="dot" style="background: var(--primary);"></div> 焦点 F₁、F₂</div>
+            <div class="legend-item"><div class="dot" style="background: var(--accent);"></div> 动点 P</div>
+            <div class="legend-item"><div class="line" style="background: var(--primary);"></div> 椭圆轨迹</div>
+            <div class="legend-item"><div class="line" style="border-top: 2px dashed var(--accent);"></div> 焦半径 PF₁、PF₂</div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <div class="panel-card">
+            <h2>椭圆的定义</h2>
+            <ul class="def-list">
+                <li>平面内一动点 <strong>P</strong>，到两个定点 <strong>F₁、F₂</strong>（焦点）的距离之<strong>和为定值 2a</strong>；</li>
+                <li>当 <strong>2a &gt; |F₁F₂|</strong> 时，P 的轨迹是<strong>椭圆</strong>；</li>
+                <li>右侧滑块可改变长轴 2a 与焦距 2c，观察离心率 e = c/a 如何影响椭圆的扁平程度。</li>
+            </ul>
+        </div>
+
+        <div class="panel-card">
+            <h2>参数控制</h2>
+            <div class="control-group">
+                <label>长轴长 (2a) <span id="val-2a">10.0</span></label>
+                <input type="range" id="slider-2a" min="6.5" max="15" step="0.1" value="10">
+            </div>
+            <div class="control-group">
+                <label>焦距 (2c) <span id="val-2c">6.0</span></label>
+                <input type="range" id="slider-2c" min="2" max="6" step="0.1" value="6">
+            </div>
+        </div>
+
+        <div class="panel-card">
+            <h2>实时数据</h2>
+            <div class="data-item"><span>|PF₁|</span><span id="dist1">0.00</span></div>
+            <div class="data-item"><span>|PF₂|</span><span id="dist2">0.00</span></div>
+            <div class="data-item total"><span>距离和</span><span id="distSum">0.00</span></div>
+            <div class="data-item sub"><span>离心率 e</span><span id="val-e">0.60</span></div>
+        </div>
+
+        <div class="panel-card">
+            <h2>动画 / 形态对比</h2>
+            <div class="control-group">
+                <div class="btn-group">
+                    <button id="btn-play">自动旋转</button>
+                    <button id="btn-reset">重置位置</button>
+                </div>
+            </div>
+            <div class="control-group">
+                <div class="btn-group">
+                    <button id="preset-flat">扁平 e=0.5</button>
+                    <button id="preset-very-flat">极扁 e=0.86</button>
+                    <button id="preset-round">近圆 e=0.13</button>
+                    <button id="preset-std">标准 e=0.6</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="hint"><strong>提示：</strong>可直接在画布上拖拽动点 P，观察 |PF₁| + |PF₂| 始终不变。</div>
+    </div>
+</div>
+
+<script>
+    const canvas = document.getElementById('mainCanvas');
+    const ctx = canvas.getContext('2d');
+    const container = document.getElementById('canvas-container');
+
+    // 参数
+    let a = 5; // 半长轴
+    let c = 3; // 半焦距
+    let angle = 0; // 动点角度
+    let isPlaying = true;
+    let isDragging = false;
+
+    // 缩放比例
+    const scale = 40;
+
+    function resize() {
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    // UI 元素
+    const slider2a = document.getElementById('slider-2a');
+    const slider2c = document.getElementById('slider-2c');
+    const val2a = document.getElementById('val-2a');
+    const val2c = document.getElementById('val-2c');
+    const valE = document.getElementById('val-e');
+    const dist1Text = document.getElementById('dist1');
+    const dist2Text = document.getElementById('dist2');
+    const distSumText = document.getElementById('distSum');
+    const btnPlay = document.getElementById('btn-play');
+    const btnReset = document.getElementById('btn-reset');
+
+    function updateParams() {
+        a = parseFloat(slider2a.value) / 2;
+        c = parseFloat(slider2c.value) / 2;
+
+        // 约束：2a > 2c
+        if (a <= c) {
+            a = c + 0.1;
+            slider2a.value = a * 2;
+        }
+
+        val2a.textContent = (a * 2).toFixed(1);
+        val2c.textContent = (c * 2).toFixed(1);
+        valE.textContent = (c / a).toFixed(2);
+    }
+
+    slider2a.addEventListener('input', updateParams);
+    slider2c.addEventListener('input', updateParams);
+
+    function setPreset(new2a, new2c) {
+        slider2a.value = new2a;
+        slider2c.value = new2c;
+        updateParams();
+    }
+
+    document.getElementById('preset-flat').addEventListener('click', () => setPreset(12, 6));
+    document.getElementById('preset-very-flat').addEventListener('click', () => setPreset(7, 6));
+    document.getElementById('preset-round').addEventListener('click', () => setPreset(15, 2));
+    document.getElementById('preset-std').addEventListener('click', () => setPreset(10, 6));
+
+    btnPlay.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        btnPlay.textContent = isPlaying ? '暂停旋转' : '自动旋转';
+        btnPlay.classList.toggle('active', isPlaying);
+    });
+
+    btnReset.addEventListener('click', () => {
+        angle = 0;
+    });
+
+    // 交互
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', drag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('touchstart', e => startDrag(e.touches[0]));
+    canvas.addEventListener('touchmove', e => drag(e.touches[0]));
+    canvas.addEventListener('touchend', endDrag);
+
+    function startDrag(e) {
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left - canvas.width / 2) / scale;
+        const y = (e.clientY - rect.top - canvas.height / 2) / scale;
+
+        // 检查是否点击在动点附近
+        const b = Math.sqrt(a*a - c*c);
+        const px = a * Math.cos(angle);
+        const py = b * Math.sin(angle);
+
+        if (Math.hypot(x - px, y - py) < 0.5) {
+            isDragging = true;
+            isPlaying = false;
+            btnPlay.textContent = '自动旋转';
+            btnPlay.classList.remove('active');
+        }
+    }
+
+    function drag(e) {
+        if (!isDragging) return;
+        const rect = canvas.getBoundingClientRect();
+        const x = (e.clientX - rect.left - canvas.width / 2) / scale;
+        const y = (e.clientY - rect.top - canvas.height / 2) / scale;
+        angle = Math.atan2(y / Math.sqrt(a*a - c*c), x / a);
+    }
+
+    function endDrag() {
+        isDragging = false;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const b = Math.sqrt(a*a - c*c);
+
+        // 1. 绘制坐标轴
+        ctx.beginPath();
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 1.5;
+        // X轴
+        ctx.moveTo(0, centerY);
+        ctx.lineTo(canvas.width, centerY);
+        // Y轴
+        ctx.moveTo(centerX, 0);
+        ctx.lineTo(centerX, canvas.height);
+        ctx.stroke();
+
+        // 2. 绘制椭圆轨迹
+        ctx.beginPath();
+        ctx.ellipse(centerX, centerY, a * scale, b * scale, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(37, 99, 235, 0.06)';
+        ctx.fill();
+
+        // 3. 绘制焦点
+        const f1x = centerX - c * scale;
+        const f2x = centerX + c * scale;
+
+        ctx.fillStyle = '#2563eb';
+        ctx.beginPath();
+        ctx.arc(f1x, centerY, 6, 0, Math.PI * 2);
+        ctx.arc(f2x, centerY, 6, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.font = 'bold 14px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText('F₁', f1x - 10, centerY + 25);
+        ctx.fillText('F₂', f2x - 10, centerY + 25);
+
+        // 4. 绘制动点 P
+        const px = centerX + a * Math.cos(angle) * scale;
+        const py = centerY + b * Math.sin(angle) * scale;
+
+        // 焦半径连线
+        ctx.setLineDash([5, 5]);
+        ctx.strokeStyle = '#f59e0b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(f1x, centerY);
+        ctx.lineTo(px, py);
+        ctx.lineTo(f2x, centerY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // 动点
+        ctx.fillStyle = '#f59e0b';
+        ctx.beginPath();
+        ctx.arc(px, py, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = 'white';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.fillStyle = '#1e293b';
+        ctx.fillText('P', px + 12, py - 12);
+
+        // 5. 计算并更新数值
+        const realPX = a * Math.cos(angle);
+        const realPY = b * Math.sin(angle);
+        const d1 = Math.sqrt(Math.pow(realPX + c, 2) + Math.pow(realPY, 2));
+        const d2 = Math.sqrt(Math.pow(realPX - c, 2) + Math.pow(realPY, 2));
+
+        dist1Text.textContent = d1.toFixed(2);
+        dist2Text.textContent = d2.toFixed(2);
+        distSumText.textContent = (d1 + d2).toFixed(2);
+
+        if (isPlaying) {
+            angle += 0.01;
+        }
+
+        requestAnimationFrame(draw);
+    }
+
+    updateParams();
+    draw();
+</script>
+
+</body>
+</html>

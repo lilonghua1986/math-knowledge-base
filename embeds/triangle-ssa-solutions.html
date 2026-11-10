@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SSA 三角形解的情况判定</title>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-tint: #eef4ff;
+            --accent: #f59e0b;
+            --accent-tint: #fef3e2;
+            --text-body: #475569;
+            --text-heading: #1e293b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --placeholder: #94a3b8;
+        }
+
+        * { box-sizing: border-box; }
+
+        body {
+            margin: 0;
+            padding: 24px;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg);
+            color: var(--text-body);
+        }
+
+        .wrap {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        header h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            margin: 0 0 6px;
+        }
+
+        header p {
+            margin: 0 0 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+
+        @media (max-width: 760px) {
+            main { grid-template-columns: 1fr; }
+        }
+
+        .card {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 18px;
+        }
+
+        #controls {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .control-group .label-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            color: var(--text-heading);
+        }
+
+        .label-row span#val-b,
+        .label-row span#val-A,
+        .label-row span#val-a {
+            color: var(--primary);
+            font-weight: 700;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .info-panel #result-text {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-heading);
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 8px;
+            font-weight: 700;
+        }
+        .badge-none { background: var(--border); color: var(--text-body); }
+        .badge-one { background: var(--primary-tint); color: var(--primary); }
+        .badge-two { background: var(--accent-tint); color: var(--accent); }
+
+        .formula-card {
+            background: var(--primary-tint);
+            color: var(--text-heading);
+            padding: 10px 14px;
+            border-radius: 10px;
+            margin-top: 10px;
+            text-align: center;
+            font-size: 0.95rem;
+        }
+
+        #status-desc {
+            margin-top: 12px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+
+        button {
+            height: 44px;
+            background: #fff;
+            color: var(--text-heading);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+            width: 100%;
+        }
+
+        button:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+
+        #stage {
+            min-height: 420px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-image:
+                linear-gradient(var(--border) 1px, transparent 1px),
+                linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size: 28px 28px;
+        }
+
+        #triangle-svg {
+            width: 100%;
+            height: 100%;
+            max-height: 460px;
+        }
+
+        .case-ref {
+            margin-top: 20px;
+        }
+
+        .case-ref h2 {
+            font-size: 1.05rem;
+            color: var(--text-heading);
+            margin: 0 0 12px;
+        }
+
+        .case-ref table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9rem;
+        }
+
+        .case-ref th, .case-ref td {
+            text-align: left;
+            padding: 8px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .case-ref th {
+            color: var(--text-heading);
+            font-weight: 700;
+            background: var(--bg);
+        }
+
+        .case-ref .n-tag {
+            display: inline-block;
+            min-width: 1.6em;
+            text-align: center;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+        .n0 { background: var(--border); color: var(--text-body); }
+        .n1 { background: var(--primary-tint); color: var(--primary); }
+        .n2 { background: var(--accent-tint); color: var(--accent); }
+    </style>
+</head>
+<body>
+<div class="wrap">
+    <header>
+        <h1>SSA 三角形解的情况判定</h1>
+        <p>已知两边 <strong>a、b</strong> 和其中一边的对角 <strong>A</strong>（边边角，SSA），三角形的解可能是 0 个、1 个或 2 个。拖动下方滑块，观察边 <strong>a</strong> 与高度 <code>h = b·sin A</code>、边 <strong>b</strong> 的大小关系如何决定解的个数。</p>
+    </header>
+    <main>
+        <aside id="controls">
+            <div class="card control-group">
+                <div class="label-row">
+                    <span>已知边 \(b\)</span>
+                    <span id="val-b">200</span>
+                </div>
+                <input type="range" id="slider-b" min="100" max="300" value="200">
+            </div>
+            <div class="card control-group">
+                <div class="label-row">
+                    <span>已知角 \(A\)</span>
+                    <span id="val-A">30°</span>
+                </div>
+                <input type="range" id="slider-A" min="10" max="170" value="30">
+            </div>
+            <div class="card control-group">
+                <div class="label-row">
+                    <span>已知边 \(a\)</span>
+                    <span id="val-a">150</span>
+                </div>
+                <input type="range" id="slider-a" min="50" max="400" value="150">
+            </div>
+            <div class="card info-panel">
+                <div id="result-text">正在计算解的情况...</div>
+                <div class="formula-card">
+                    关键高度 \(h = b \sin A = \) <span id="val-h">100.0</span>
+                </div>
+                <div id="status-desc"></div>
+            </div>
+            <button id="reset-btn">重置参数</button>
+        </aside>
+        <section class="card" id="stage">
+            <svg id="triangle-svg" viewBox="-150 -250 500 350">
+                <!-- 辅助线：射线 AC -->
+                <line id="line-AC" x1="0" y1="0" x2="600" y2="0" stroke="#94a3b8" stroke-width="2" stroke-dasharray="5,5" />
+                <!-- 辅助线：高度 h -->
+                <line id="line-h" x1="0" y1="0" x2="0" y2="0" stroke="#f59e0b" stroke-width="2" stroke-dasharray="4,4" />
+                <text id="text-h" x="0" y="0" fill="#f59e0b" font-size="20">h</text>
+
+                <!-- 边 b -->
+                <line id="side-b" x1="0" y1="0" x2="0" y2="0" stroke="#1e293b" stroke-width="4" />
+                <text id="label-b" x="0" y="0" fill="#1e293b" font-size="24">b</text>
+
+                <!-- 边 a 的摆动轨迹 -->
+                <circle id="arc-a" cx="0" cy="0" r="0" fill="none" stroke="#94a3b8" stroke-width="1" stroke-dasharray="2,2" opacity="0.5" />
+
+                <!-- 以点 C 为圆心、半径为 a 的圆，与底边射线的交点即为可能的顶点 B -->
+                <circle id="circle-BC" cx="0" cy="0" r="0" fill="none" stroke="#2563eb" stroke-width="2" stroke-dasharray="4,4" opacity="0.5" />
+                <circle id="intersect-P1" cx="0" cy="0" r="6" fill="#2563eb" style="display:none;" />
+                <circle id="intersect-P2" cx="0" cy="0" r="6" fill="#2563eb" style="display:none;" />
+                <text id="label-P1" x="0" y="0" fill="#2563eb" font-size="20" style="display:none;">P₁</text>
+                <text id="label-P2" x="0" y="0" fill="#2563eb" font-size="20" style="display:none;">P₂</text>
+                <line id="side-a1" x1="0" y1="0" x2="0" y2="0" stroke="#2563eb" stroke-width="4" />
+                <text id="label-a1" x="0" y="0" fill="#2563eb" font-size="24">a</text>
+                <line id="side-a2" x1="0" y1="0" x2="0" y2="0" stroke="#f59e0b" stroke-width="4" />
+                <text id="label-a2" x="0" y="0" fill="#f59e0b" font-size="24">a'</text>
+
+                <!-- 顶点标签 -->
+                <text id="label-A-vertex" x="-30" y="20" fill="#1e293b" font-size="28" font-weight="bold">A</text>
+                <text id="label-C-vertex" x="0" y="0" fill="#1e293b" font-size="28" font-weight="bold">C</text>
+                <text id="label-B1-vertex" x="0" y="20" fill="#2563eb" font-size="28" font-weight="bold">B</text>
+                <text id="label-B2-vertex" x="0" y="20" fill="#f59e0b" font-size="28" font-weight="bold">B'</text>
+            </svg>
+        </section>
+    </main>
+
+    <section class="card case-ref">
+        <h2>解的个数：分情况速查</h2>
+        <table>
+            <thead>
+                <tr><th>角 A</th><th>边长关系</th><th>解的个数</th><th>说明</th></tr>
+            </thead>
+            <tbody>
+                <tr><td rowspan="4">锐角 / 直角对角<br>(A &lt; 90°)</td><td>a &lt; h</td><td><span class="n-tag n0">0</span></td><td>a 太短，够不到底边射线</td></tr>
+                <tr><td>a = h</td><td><span class="n-tag n1">1</span></td><td>恰好垂直，构成直角三角形</td></tr>
+                <tr><td>h &lt; a &lt; b</td><td><span class="n-tag n2">2</span></td><td>可向左、右两个方向摆动</td></tr>
+                <tr><td>a ≥ b</td><td><span class="n-tag n1">1</span></td><td>只能向右摆动，唯一确定</td></tr>
+                <tr><td rowspan="2">钝角对角<br>(A ≥ 90°)</td><td>a &gt; b</td><td><span class="n-tag n1">1</span></td><td>唯一一个三角形</td></tr>
+                <tr><td>a ≤ b</td><td><span class="n-tag n0">0</span></td><td>无法构成三角形</td></tr>
+            </tbody>
+        </table>
+    </section>
+</div>
+
+    <script>
+        const sliderB = document.getElementById('slider-b');
+        const sliderA = document.getElementById('slider-A');
+        const slidera = document.getElementById('slider-a');
+        const valB = document.getElementById('val-b');
+        const valA = document.getElementById('val-A');
+        const vala = document.getElementById('val-a');
+        const valH = document.getElementById('val-h');
+        const resultText = document.getElementById('result-text');
+        const statusDesc = document.getElementById('status-desc');
+        const resetBtn = document.getElementById('reset-btn');
+
+        const svg = document.getElementById('triangle-svg');
+        const sideB = document.getElementById('side-b');
+        const sideA1 = document.getElementById('side-a1');
+        const sideA2 = document.getElementById('side-a2');
+        const lineH = document.getElementById('line-h');
+        const arcA = document.getElementById('arc-a');
+        const circleBC = document.getElementById('circle-BC');
+        const intersectP1 = document.getElementById('intersect-P1');
+        const intersectP2 = document.getElementById('intersect-P2');
+        const labelP1 = document.getElementById('label-P1');
+        const labelP2 = document.getElementById('label-P2');
+
+        const labelB = document.getElementById('label-b');
+        const labelA1 = document.getElementById('label-a1');
+        const labelA2 = document.getElementById('label-a2');
+        const textH = document.getElementById('text-h');
+        const labelCVertex = document.getElementById('label-C-vertex');
+        const labelB1Vertex = document.getElementById('label-B1-vertex');
+        const labelB2Vertex = document.getElementById('label-B2-vertex');
+
+        function update() {
+            const b = parseFloat(sliderB.value);
+            const A_deg = parseFloat(sliderA.value);
+            const a = parseFloat(slidera.value);
+            const A_rad = A_deg * Math.PI / 180;
+
+            valB.textContent = b;
+            valA.textContent = A_deg + '°';
+            vala.textContent = a;
+
+            const h = b * Math.sin(A_rad);
+            valH.textContent = h.toFixed(1);
+
+            // 顶点 A 在 (0, 0)
+            // 顶点 C 在 (b * cos A, -b * sin A) -> 注意 SVG 坐标系 y 向下为正，我们向上画
+            const Cx = b * Math.cos(A_rad);
+            const Cy = -b * Math.sin(A_rad);
+
+            // 更新边 b
+            sideB.setAttribute('x1', 0);
+            sideB.setAttribute('y1', 0);
+            sideB.setAttribute('x2', Cx);
+            sideB.setAttribute('y2', Cy);
+            labelB.setAttribute('x', Cx / 2 - 20);
+            labelB.setAttribute('y', Cy / 2 - 10);
+            labelCVertex.setAttribute('x', Cx);
+            labelCVertex.setAttribute('y', Cy - 10);
+
+            // 更新高度 h 辅助线
+            lineH.setAttribute('x1', Cx);
+            lineH.setAttribute('y1', Cy);
+            lineH.setAttribute('x2', Cx);
+            lineH.setAttribute('y2', 0);
+            textH.setAttribute('x', Cx + 5);
+            textH.setAttribute('y', Cy / 2);
+
+            // 更新圆弧
+            arcA.setAttribute('cx', Cx);
+            arcA.setAttribute('cy', Cy);
+            arcA.setAttribute('r', a);
+
+            // 更新以 C 为圆心，半径为 BC 的圆
+            const radiusBC = a; // BC 的长度就是 a
+            circleBC.setAttribute('cx', Cx);
+            circleBC.setAttribute('cy', Cy);
+            circleBC.setAttribute('r', radiusBC);
+
+            // 计算圆 C 与直线 AB (y=0) 的交点
+            // (x - Cx)^2 + (0 - Cy)^2 = a^2
+            // (x - Cx)^2 = a^2 - Cy^2
+            // x = Cx ± sqrt(a^2 - Cy^2)
+            const D_circle = a * a - Cy * Cy;
+            if (D_circle >= 0) {
+                const xP1 = Cx - Math.sqrt(D_circle);
+                const xP2 = Cx + Math.sqrt(D_circle);
+
+                intersectP1.setAttribute('cx', xP1);
+                intersectP1.setAttribute('cy', 0);
+                intersectP1.style.display = 'block';
+                labelP1.setAttribute('x', xP1 - 10);
+                labelP1.setAttribute('y', 30);
+                labelP1.style.display = 'block';
+
+                intersectP2.setAttribute('cx', xP2);
+                intersectP2.setAttribute('cy', 0);
+                intersectP2.style.display = 'block';
+                labelP2.setAttribute('x', xP2 - 10);
+                labelP2.setAttribute('y', 30);
+                labelP2.style.display = 'block';
+            } else {
+                intersectP1.style.display = 'none';
+                labelP1.style.display = 'none';
+                intersectP2.style.display = 'none';
+                labelP2.style.display = 'none';
+            }
+
+            // 计算交点 (SSA 判定)
+            // 射线方程: y = 0, x > 0
+            // 圆方程: (x - Cx)^2 + (y - Cy)^2 = a^2
+            // 代入 y = 0: (x - Cx)^2 + Cy^2 = a^2
+            // (x - Cx)^2 = a^2 - Cy^2
+            const D = a * a - Cy * Cy;
+            let solutions = [];
+
+            if (A_deg < 90) {
+                if (D < 0) {
+                    // 无解: a < h
+                    solutions = [];
+                    resultText.innerHTML = '<span class="badge badge-none">无解</span> (a &lt; h)';
+                    statusDesc.textContent = '边 a 太短，摆动不到底边射线，无法构成三角形。';
+                } else if (Math.abs(D) < 0.01) {
+                    // 一解: a = h (直角)
+                    solutions = [Cx];
+                    resultText.innerHTML = '<span class="badge badge-one">一解</span> (a = h)';
+                    statusDesc.textContent = '边 a 恰好等于高度 h，唯一确定一个直角三角形。';
+                } else {
+                    const x1 = Cx - Math.sqrt(D);
+                    const x2 = Cx + Math.sqrt(D);
+
+                    if (a >= b) {
+                        // 一解: a >= b
+                        solutions = [x2];
+                        resultText.innerHTML = '<span class="badge badge-one">一解</span> (a ≥ b)';
+                        statusDesc.textContent = '边 a 不小于边 b，只能向右摆动，三角形唯一确定。';
+                    } else if (a > h) {
+                        // 两解: h < a < b
+                        solutions = [x1, x2];
+                        resultText.innerHTML = '<span class="badge badge-two">两解</span> (h &lt; a &lt; b)';
+                        statusDesc.textContent = '边 a 介于 h 和 b 之间，可向左或向右摆动，得到两个不同的三角形。';
+                    }
+                }
+            } else {
+                // 钝角或直角对角
+                if (a > b) {
+                    const x2 = Cx + Math.sqrt(D);
+                    solutions = [x2];
+                    resultText.innerHTML = '<span class="badge badge-one">一解</span> (a &gt; b)';
+                    statusDesc.textContent = '对角为钝角时，只要 a 大于邻边 b 即可，唯一一个三角形。';
+                } else {
+                    solutions = [];
+                    resultText.innerHTML = '<span class="badge badge-none">无解</span> (a ≤ b)';
+                    statusDesc.textContent = '对角为钝角时，a 若不大于邻边 b，无法构成三角形。';
+                }
+            }
+
+            // 渲染解
+            if (solutions.length >= 1) {
+                sideA1.setAttribute('x1', Cx);
+                sideA1.setAttribute('y1', Cy);
+                sideA1.setAttribute('x2', solutions[solutions.length - 1]);
+                sideA1.setAttribute('y2', 0);
+                sideA1.style.display = 'block';
+                labelA1.setAttribute('x', (Cx + solutions[solutions.length - 1]) / 2 + 10);
+                labelA1.setAttribute('y', Cy / 2);
+                labelA1.style.display = 'block';
+                labelB1Vertex.setAttribute('x', solutions[solutions.length - 1]);
+                labelB1Vertex.style.display = 'block';
+            } else {
+                sideA1.style.display = 'none';
+                labelA1.style.display = 'none';
+                labelB1Vertex.style.display = 'none';
+            }
+
+            if (solutions.length === 2) {
+                sideA2.setAttribute('x1', Cx);
+                sideA2.setAttribute('y1', Cy);
+                sideA2.setAttribute('x2', solutions[0]);
+                sideA2.setAttribute('y2', 0);
+                sideA2.style.display = 'block';
+                labelA2.setAttribute('x', (Cx + solutions[0]) / 2 - 20);
+                labelA2.setAttribute('y', Cy / 2);
+                labelA2.style.display = 'block';
+                labelB2Vertex.setAttribute('x', solutions[0]);
+                labelB2Vertex.style.display = 'block';
+            } else {
+                sideA2.style.display = 'none';
+                labelA2.style.display = 'none';
+                labelB2Vertex.style.display = 'none';
+            }
+        }
+
+        [sliderB, sliderA, slidera].forEach(s => s.addEventListener('input', update));
+
+        resetBtn.onclick = () => {
+            sliderB.value = 200;
+            sliderA.value = 30;
+            slidera.value = 150;
+            update();
+        };
+
+        // 初始化
+        update();
+
+        // MathJax 渲染
+        window.addEventListener('load', () => {
+            if (window.MathJax) {
+                window.MathJax.typeset();
+            }
+        });
+    </script>
+</body>
+</html>

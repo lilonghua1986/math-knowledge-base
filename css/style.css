@@ -25,13 +25,19 @@ body {
 }
 
 .site-header h1 {
-  margin: 0 0 14px;
+  margin: 0 0 4px;
   font-size: 20px;
+}
+
+.site-subtitle {
+  margin: 0 0 14px;
+  font-size: 13px;
+  color: var(--placeholder);
 }
 
 .mode-switch, .filter-row {
   display: flex;
-  gap: 8px;
+  gap: 8px 10px;
   flex-wrap: wrap;
 }
 

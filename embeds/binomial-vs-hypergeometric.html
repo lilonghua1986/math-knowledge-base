@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>二项分布与超几何分布对比</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+    :root {
+        --primary: #2563eb;
+        --primary-tint: #eef4ff;
+        --accent: #f59e0b;
+        --accent-tint: #fef6e8;
+        --text: #475569;
+        --heading: #1e293b;
+        --border: #e2e8f0;
+        --bg: #f8fafc;
+        --placeholder: #94a3b8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0;
+        padding: 20px;
+        font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+    }
+
+    header { text-align: center; margin-bottom: 20px; }
+    header h1 { margin: 0; font-size: 1.5rem; color: var(--heading); }
+    header p { margin: 6px 0 0; font-size: 0.85rem; color: var(--placeholder); }
+
+    .layout {
+        display: grid;
+        grid-template-columns: 320px 1fr;
+        gap: 20px;
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    @media (max-width: 860px) {
+        .layout { grid-template-columns: 1fr; }
+    }
+
+    .side-panel, .main-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .card {
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 20px;
+    }
+
+    .card h2 {
+        margin: 0 0 14px;
+        font-size: 1.05rem;
+        color: var(--heading);
+    }
+
+    .slider-group { margin-bottom: 18px; }
+    .slider-group:last-child { margin-bottom: 0; }
+    .slider-row {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.85rem;
+        margin-bottom: 6px;
+    }
+    .slider-row .val { font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+    input[type=range] {
+        width: 100%;
+        accent-color: var(--primary);
+        cursor: pointer;
+    }
+
+    .desc-box {
+        background: var(--primary-tint);
+        border-radius: 10px;
+        padding: 12px 14px;
+        font-size: 0.82rem;
+        line-height: 1.6;
+    }
+    .desc-box ul { margin: 0; padding-left: 18px; }
+    .desc-box li { margin-bottom: 4px; }
+
+    .stat-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .stat-box {
+        border-radius: 10px;
+        padding: 12px;
+        font-size: 0.82rem;
+    }
+    .stat-box.bin { background: var(--primary-tint); }
+    .stat-box.hyper { background: var(--accent-tint); }
+    .stat-box .label { font-weight: 700; margin-bottom: 6px; display: block; }
+    .stat-box.bin .label { color: var(--primary); }
+    .stat-box.hyper .label { color: #b45309; }
+    .stat-box .row { font-family: monospace; font-size: 0.9rem; }
+
+    .hint {
+        margin: 10px 0 0;
+        font-size: 0.75rem;
+        color: var(--placeholder);
+        font-style: italic;
+    }
+
+    #chartContainer {
+        min-height: 380px;
+        height: 380px;
+    }
+
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { padding: 8px; text-align: center; border-bottom: 1px solid var(--border); }
+    th { color: var(--heading); background: var(--bg); }
+    .col-bin { color: var(--primary); font-weight: 700; }
+    .col-hyper { color: #b45309; font-weight: 700; }
+</style>
+</head>
+<body>
+
+<header>
+    <h1>二项分布与超几何分布对比</h1>
+    <p>人教A版 选择性必修三 · 概率统计探究</p>
+</header>
+
+<div class="layout">
+    <!-- 左侧：参数与说明 -->
+    <aside class="side-panel">
+        <div class="card">
+            <h2>参数设置</h2>
+            <div class="slider-group">
+                <div class="slider-row">
+                    <label for="inputN">总体容量 N（球总数）</label>
+                    <span class="val" id="valN">100</span>
+                </div>
+                <input type="range" id="inputN" min="10" max="500" value="100">
+            </div>
+            <div class="slider-group">
+                <div class="slider-row">
+                    <label for="inputM">红球数量 M</label>
+                    <span class="val" id="valM">30</span>
+                </div>
+                <input type="range" id="inputM" min="1" max="99" value="30">
+            </div>
+            <div class="slider-group">
+                <div class="slider-row">
+                    <label for="inputn">样本量 n（摸球次数）</label>
+                    <span class="val" id="valn">10</span>
+                </div>
+                <input type="range" id="inputn" min="1" max="50" value="10">
+            </div>
+            <div class="desc-box">
+                <ul>
+                    <li><strong>二项分布 B(n, p)</strong>：有放回摸球，每次成功率恒为 p = M/N。</li>
+                    <li><strong>超几何分布 H(N, M, n)</strong>：不放回摸球，成功率随抽取过程变化。</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>期望与方差对比</h2>
+            <div class="stat-grid">
+                <div class="stat-box bin">
+                    <span class="label">二项分布 B(n, p)</span>
+                    <div class="row">E(X) = <span id="expBin">3.00</span></div>
+                    <div class="row">D(X) = <span id="varBin">2.10</span></div>
+                </div>
+                <div class="stat-box hyper">
+                    <span class="label">超几何分布 H</span>
+                    <div class="row">E(X) = <span id="expHyper">3.00</span></div>
+                    <div class="row">D(X) = <span id="varHyper">1.91</span></div>
+                </div>
+            </div>
+            <p class="hint">观察：当 n/N 变小时，两者方差差异会如何变化？</p>
+        </div>
+    </aside>
+
+    <!-- 右侧：图表与表格 -->
+    <main class="main-panel">
+        <div class="card" id="chartContainer"></div>
+        <div class="card">
+            <h2 style="font-size:0.95rem;">概率分布列对比表</h2>
+            <div class="table-wrap">
+                <table id="distTable">
+                    <thead>
+                        <tr>
+                            <th>X = k</th>
+                            <th class="col-bin">二项分布 P(X=k)</th>
+                            <th class="col-hyper">超几何分布 P(X=k)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    // 组合数计算
+    function combinations(n, k) {
+        if (k < 0 || k > n) return 0;
+        if (k === 0 || k === n) return 1;
+        if (k > n / 2) k = n - k;
+        let res = 1;
+        for (let i = 1; i <= k; i++) {
+            res = res * (n - i + 1) / i;
+        }
+        return res;
+    }
+
+    // 二项分布概率
+    function binomialProb(n, p, k) {
+        return combinations(n, k) * Math.pow(p, k) * Math.pow(1 - p, n - k);
+    }
+
+    // 超几何分布概率
+    function hyperProb(N, M, n, k) {
+        if (k < Math.max(0, n - (N - M)) || k > Math.min(n, M)) return 0;
+        return (combinations(M, k) * combinations(N - M, n - k)) / combinations(N, n);
+    }
+
+    let myChart;
+    const inputs = {
+        N: document.getElementById('inputN'),
+        M: document.getElementById('inputM'),
+        n: document.getElementById('inputn')
+    };
+
+    function initChart() {
+        myChart = echarts.init(document.getElementById('chartContainer'));
+        update();
+    }
+
+    function update() {
+        const N = parseInt(inputs.N.value);
+
+        // 关键修复：先把 M、n 的滑块上限与当前值都同步到最新的 N，
+        // 再读取它们的值用于计算，避免用“旧值”渲染出一帧错误结果。
+        inputs.M.max = N;
+        inputs.n.max = N;
+        if (parseInt(inputs.M.value) > N) inputs.M.value = N;
+        if (parseInt(inputs.n.value) > N) inputs.n.value = N;
+
+        const M = parseInt(inputs.M.value);
+        const n = parseInt(inputs.n.value);
+
+        document.getElementById('valN').innerText = N;
+        document.getElementById('valM').innerText = M;
+        document.getElementById('valn').innerText = n;
+
+        const p = M / N;
+        const xData = Array.from({length: n + 1}, (_, i) => i);
+        const binData = xData.map(k => binomialProb(n, p, k));
+        const hyperData = xData.map(k => hyperProb(N, M, n, k));
+
+        // 更新图表
+        const option = {
+            title: { text: '概率分布对比图', left: 'center', textStyle: { fontSize: 15, color: '#1e293b' } },
+            tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+            legend: { bottom: 0, data: ['二项分布（有放回）', '超几何分布（无放回）'], textStyle: { color: '#475569' } },
+            grid: { top: 56, left: '5%', right: '5%', bottom: 56, containLabel: true },
+            xAxis: { type: 'category', data: xData, name: 'k', axisLine: { lineStyle: { color: '#94a3b8' } } },
+            yAxis: { type: 'value', name: 'P(X=k)', splitLine: { lineStyle: { color: '#e2e8f0' } } },
+            series: [
+                {
+                    name: '二项分布（有放回）',
+                    type: 'bar',
+                    data: binData,
+                    itemStyle: { color: '#2563eb' },
+                    barGap: '10%'
+                },
+                {
+                    name: '超几何分布（无放回）',
+                    type: 'bar',
+                    data: hyperData,
+                    itemStyle: { color: '#f59e0b' }
+                }
+            ],
+            animationDuration: 500
+        };
+        myChart.setOption(option);
+
+        // 更新表格（只显示概率较明显的部分，避免表格过长）
+        const tableBody = document.getElementById('tableBody');
+        tableBody.innerHTML = '';
+        xData.forEach(k => {
+            if (binData[k] > 0.0001 || hyperData[k] > 0.0001) {
+                const row = `<tr>
+                    <td>${k}</td>
+                    <td class="col-bin">${binData[k].toFixed(4)}</td>
+                    <td class="col-hyper">${hyperData[k].toFixed(4)}</td>
+                </tr>`;
+                tableBody.innerHTML += row;
+            }
+        });
+
+        // 更新期望与方差
+        const eBin = n * p;
+        const dBin = n * p * (1 - p);
+        const eHyper = n * (M / N);
+        const dHyper = n * (M / N) * (1 - M / N) * (N - n) / (N - 1);
+
+        document.getElementById('expBin').innerText = eBin.toFixed(2);
+        document.getElementById('varBin').innerText = dBin.toFixed(2);
+        document.getElementById('expHyper').innerText = eHyper.toFixed(2);
+        document.getElementById('varHyper').innerText = dHyper.toFixed(2);
+    }
+
+    // 监听输入
+    Object.values(inputs).forEach(input => {
+        input.addEventListener('input', update);
+    });
+
+    window.addEventListener('resize', () => myChart && myChart.resize());
+
+    window.onload = initChart;
+</script>
+</body>
+</html>

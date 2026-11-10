@@ -1,0 +1,1046 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>双曲线的定义 — 拉链实验演示</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']]
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-light: #eef4ff;
+            --accent: #f59e0b;
+            --accent-light: #fef3e2;
+            --text-body: #475569;
+            --text-heading: #1e293b;
+            --border: #e2e8f0;
+            --bg: #f8fafc;
+            --placeholder: #94a3b8;
+            --danger: #ef4444;
+            --success: #16a34a;
+        }
+        body {
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg);
+            color: var(--text-body);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+        }
+        .slider-container input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: var(--border);
+            outline: none;
+        }
+        .slider-container input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--primary);
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .btn-primary {
+            background-color: var(--primary);
+            color: white;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover { background-color: #1d4ed8; }
+        .btn-primary:disabled {
+            background-color: var(--placeholder);
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary);
+            border: 1px solid var(--primary);
+            transition: all 0.2s;
+        }
+        .btn-secondary:hover { background-color: var(--primary-light); }
+        .card {
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+        h1, h3 { color: var(--text-heading); }
+        .data-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 2px;
+        }
+        .tag-accent { background: var(--accent-light); color: #b45309; }
+        .tag-primary { background: var(--primary-light); color: var(--primary); }
+        .step-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .step-active { background-color: var(--primary); color: white; }
+        .step-inactive { background-color: var(--border); color: var(--placeholder); }
+        .practice-option {
+            display: block;
+            width: 100%;
+            padding: 10px 14px;
+            margin: 6px 0;
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+        .practice-option:hover { border-color: var(--primary); }
+        .practice-option.correct { border-color: var(--success); background-color: #f0fdf4; }
+        .practice-option.wrong { border-color: var(--danger); background-color: #fef2f2; }
+    </style>
+</head>
+<body>
+    <div class="min-h-screen p-4">
+        <!-- 标题区 -->
+        <div class="mb-4">
+            <h1 class="text-2xl font-bold text-center">双曲线的定义 — 拉链实验演示</h1>
+            <p class="text-center text-sm mt-1" style="color: var(--text-body);">平面内到两定点 <strong>F₁、F₂</strong> 距离之差的绝对值为常数（小于 \( |F_1F_2| \)）的点的轨迹，叫做<strong>双曲线</strong>。</p>
+        </div>
+
+        <div class="flex flex-col lg:flex-row gap-4 max-w-7xl mx-auto">
+            <!-- 左侧主画布 -->
+            <div class="flex-1 lg:w-2/3">
+                <div class="card">
+                    <div class="flex justify-center items-center mb-2 flex-wrap" id="step-indicator">
+                        <span class="step-dot step-active" id="step1-badge">1</span>
+                        <span class="text-sm mr-4">放置焦点</span>
+                        <span class="step-dot step-inactive" id="step2-badge">2</span>
+                        <span class="text-sm mr-4">拉链准备</span>
+                        <span class="step-dot step-inactive" id="step3-badge">3</span>
+                        <span class="text-sm mr-4">拉动拉链</span>
+                        <span class="step-dot step-inactive" id="step4-badge">4</span>
+                        <span class="text-sm mr-4">轨迹形成</span>
+                        <span class="step-dot step-inactive" id="step5-badge">5</span>
+                        <span class="text-sm">M点运动</span>
+                    </div>
+                    <div class="flex justify-center gap-2 flex-wrap mb-2" id="step-play-controls">
+                        <button id="btn-step-play-1" class="btn-secondary px-3 py-1 rounded text-xs">播放第1步</button>
+                        <button id="btn-step-play-2" class="btn-secondary px-3 py-1 rounded text-xs">播放第2步</button>
+                        <button id="btn-step-play-3" class="btn-secondary px-3 py-1 rounded text-xs">播放第3步</button>
+                        <button id="btn-step-play-4" class="btn-secondary px-3 py-1 rounded text-xs">播放第4步</button>
+                        <button id="btn-step-play-5" class="btn-secondary px-3 py-1 rounded text-xs">播放第5步</button>
+                    </div>
+                    <svg id="canvas" viewBox="0 0 600 450" class="w-full" style="border: 1px solid #e2e8f0; border-radius: 8px; background: #fafbfc;">
+                        <!-- 坐标系 -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+                                <polygon points="0 0, 10 3.5, 0 7" fill="#64748b" />
+                            </marker>
+                        </defs>
+
+                        <!-- 坐标轴 -->
+                        <line x1="50" y1="225" x2="550" y2="225" stroke="#cbd5e1" stroke-width="1" marker-end="url(#arrowhead)" />
+                        <line x1="300" y1="400" x2="300" y2="50" stroke="#cbd5e1" stroke-width="1" marker-end="url(#arrowhead)" />
+                        <text x="545" y="245" font-size="12" fill="#64748b" text-anchor="end">x</text>
+                        <text x="310" y="60" font-size="12" fill="#64748b">y</text>
+                        <text x="305" y="240" font-size="12" fill="#94a3b8">O</text>
+
+                        <!-- 渐近线 (虚线段) -->
+                        <g id="asymptotes" opacity="0">
+                            <line id="asymptote1" x1="100" y1="100" x2="500" y2="350" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5,5" />
+                            <line id="asymptote2" x1="100" y1="350" x2="500" y2="100" stroke="#94a3b8" stroke-width="1" stroke-dasharray="5,5" />
+                        </g>
+
+                        <!-- 参考双曲线：右支(F2/主色)、左支(F1/强调色) -->
+                        <path id="hyperbola-right" fill="none" stroke="#2563eb" stroke-width="2.5" opacity="0.3" />
+                        <path id="hyperbola-left" fill="none" stroke="#f59e0b" stroke-width="2.5" opacity="0.3" />
+
+                        <!-- 动画绘制轨迹 -->
+                        <path id="trace-right" fill="none" stroke="#2563eb" stroke-width="2.5" />
+                        <path id="trace-left" fill="none" stroke="#f59e0b" stroke-width="2.5" />
+
+                        <!-- 拉链线段 MF1(强调色) 和 MF2(主色) -->
+                        <line id="line-mf1" x1="0" y1="0" x2="0" y2="0" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" />
+                        <line id="line-mf2" x1="0" y1="0" x2="0" y2="0" stroke="#2563eb" stroke-width="2" stroke-linecap="round" />
+
+                        <!-- 拉链牙齿效果 -->
+                        <g id="zipper-teeth" opacity="0"></g>
+
+                        <!-- F1, F2焦点 -->
+                        <g id="foci">
+                            <circle id="f1-dot" cx="220" cy="225" r="5" fill="#f59e0b" />
+                            <text x="215" y="250" font-size="16" fill="#f59e0b" font-weight="bold" text-anchor="middle">\( F_1 \)</text>
+                            <circle id="f2-dot" cx="380" cy="225" r="5" fill="#2563eb" />
+                            <text x="385" y="250" font-size="16" fill="#2563eb" font-weight="bold" text-anchor="middle">\( F_2 \)</text>
+                        </g>
+
+                        <!-- 顶点A1(强调色), A2(主色) -->
+                        <g id="vertices" opacity="0">
+                            <circle id="v1-dot" cx="260" cy="225" r="4" fill="#f59e0b" />
+                            <text id="v1-label" x="255" y="245" font-size="14" fill="#f59e0b" text-anchor="middle">\( A_1 \)</text>
+                            <circle id="v2-dot" cx="340" cy="225" r="4" fill="#2563eb" />
+                            <text id="v2-label" x="345" y="245" font-size="14" fill="#2563eb" text-anchor="middle">\( A_2 \)</text>
+                        </g>
+
+                        <!-- a, b, c 线段标注：a/c 用主色，b 用强调色 -->
+                        <g id="dimension-lines" opacity="0">
+                            <line id="line-a" x1="300" y1="225" x2="340" y2="225" stroke="#2563eb" stroke-width="2" />
+                            <text id="label-a" x="320" y="215" font-size="13" fill="#2563eb" text-anchor="middle">\( a \)</text>
+
+                            <line id="line-c" x1="300" y1="225" x2="380" y2="225" stroke="#2563eb" stroke-width="2" stroke-dasharray="4,3" opacity="0.6" />
+                            <text id="label-c" x="340" y="215" font-size="13" fill="#2563eb" text-anchor="middle" opacity="0.8">\( c \)</text>
+
+                            <line id="line-b" x1="380" y1="225" x2="380" y2="285" stroke="#f59e0b" stroke-width="2" />
+                            <text id="label-b" x="395" y="260" font-size="13" fill="#f59e0b">\( b \)</text>
+                        </g>
+
+                        <!-- M点（笔尖，中性色） -->
+                        <g id="point-m" opacity="0">
+                            <circle id="m-dot" cx="0" cy="0" r="6" fill="#1e293b" stroke="white" stroke-width="2" />
+                            <text id="m-label" x="0" y="0" font-size="16" fill="#1e293b" font-weight="bold">M</text>
+                        </g>
+
+                        <!-- 警告显示（特殊情况） -->
+                        <text id="warning-text" x="300" y="150" font-size="16" fill="#ef4444" text-anchor="middle" font-weight="bold" opacity="0"></text>
+                    </svg>
+                    <p class="text-xs mt-2 text-center" id="canvas-hint" style="color: var(--text-body);">提示：点击"播放"开始演示，或拖动参数滑块观察轨迹变化</p>
+                </div>
+            </div>
+
+            <!-- 右侧控制与数据区 -->
+            <div class="w-full lg:w-80">
+                <!-- 播放控制 -->
+                <div class="card">
+                    <h3 class="text-sm font-bold mb-3">播放控制</h3>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="btn-play" class="btn-primary py-2 rounded-lg text-sm font-medium">▶ 播放</button>
+                        <button id="btn-reset" class="btn-secondary py-2 rounded-lg text-sm font-medium">↺ 重置</button>
+                        <button id="btn-step" class="btn-secondary py-2 rounded-lg text-sm font-medium">⏭ 分步</button>
+                    </div>
+                    <div class="flex items-center gap-2 mt-3">
+                        <span class="text-xs w-16" style="color: var(--placeholder);">动画速度</span>
+                        <input type="range" id="speed-slider" min="0.5" max="3" step="0.5" value="1.5" class="flex-1">
+                        <span class="text-xs w-8" style="color: var(--text-body);" id="speed-value">1.5x</span>
+                    </div>
+                </div>
+
+                <!-- 参数调节 -->
+                <div class="card">
+                    <h3 class="text-sm font-bold mb-3">参数调节</h3>
+                    <div class="slider-container mb-3">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span style="color: var(--text-body);">焦距 \( c \)（焦点到中心距离）</span>
+                            <span class="font-medium" style="color: var(--primary);" id="c-value">c = 40</span>
+                        </div>
+                        <input type="range" id="c-slider" min="20" max="80" step="5" value="40">
+                    </div>
+                    <div class="slider-container">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span style="color: var(--text-body);">实半轴 \( a \)</span>
+                            <span class="font-medium" style="color: #b45309;" id="a-value">a = 20</span>
+                        </div>
+                        <input type="range" id="a-slider" min="0" max="80" step="5" value="20">
+                        <p class="text-xs mt-1" id="param-warning" style="display:none; color: var(--danger);">需 <strong>a &lt; c</strong>：a = c 时轨迹是两条射线，a &gt; c 时无轨迹。</p>
+                    </div>
+                    <div class="mt-3 pt-3 border-t" style="border-color: var(--border);">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span style="color: var(--text-body);">虚半轴 \( b = \sqrt{c^2 - a^2} \)</span>
+                            <span class="font-medium" style="color: #b45309;" id="b-value">b ≈ 34.6</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 实时数据 -->
+                <div class="card">
+                    <h3 class="text-sm font-bold mb-3">实时距离数据</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="data-tag tag-accent">\( |MF_1| \)</span>
+                            <span class="font-mono font-bold" style="color: #b45309;" id="mf1-value">--</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="data-tag tag-primary">\( |MF_2| \)</span>
+                            <span class="font-mono font-bold" style="color: var(--primary);" id="mf2-value">--</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="data-tag tag-primary">\( ||MF_1| - |MF_2|| \)</span>
+                            <span class="font-mono font-bold" style="color: var(--primary);" id="diff-value">--</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-2 border-t" style="border-color: var(--border);">
+                            <span style="color: var(--text-body);">定值 \( 2a \)</span>
+                            <span class="font-mono font-bold" style="color: #b45309;" id="twoa-value">= 40</span>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- 概念练习 -->
+                <div class="card" id="practice-card">
+                    <h3 class="text-sm font-bold mb-2">概念即时检测</h3>
+                    <p class="text-xs mb-3" style="color: var(--text-body);" id="practice-question">已知两定点 \( F_1(-5,0), F_2(5,0) \)，动点 M 满足 \( ||MF_1| - |MF_2|| = 6 \)，则 M 点的轨迹是？</p>
+                    <div id="practice-options">
+                        <button class="practice-option" data-correct="true"><span class="text-xs" style="color: var(--placeholder);">A.</span> 双曲线</button>
+                        <button class="practice-option" data-correct="false"><span class="text-xs" style="color: var(--placeholder);">B.</span> 椭圆</button>
+                        <button class="practice-option" data-correct="false"><span class="text-xs" style="color: var(--placeholder);">C.</span> 两条射线</button>
+                        <button class="practice-option" data-correct="false"><span class="text-xs" style="color: var(--placeholder);">D.</span> 无轨迹</button>
+                    </div>
+                    <div id="practice-feedback" class="mt-2 text-sm hidden"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 全局状态
+        var state = {
+            c: 40,
+            a: 20,
+            scale: 2,
+            playing: false,
+            currentStep: 0,
+            speed: 1.5,
+            tracePointsR: [],
+            tracePointsL: [],
+            motionActive: false,
+            motionFrame: null,
+            motionStart: 0
+        };
+
+        // 获取SVG坐标原点
+        function getOrigin() {
+            return { x: 300, y: 225 };
+        }
+
+        // 计算双曲线上一点坐标（参数方程）
+        function hyperbolaPoint(angle, side, a, c) {
+            var b = Math.sqrt(c*c - a*a);
+            var cos_t = Math.cos(angle);
+            var sin_t = Math.sin(angle);
+            var x = a / cos_t;
+            var y = b * sin_t / cos_t;
+            if (side === 'left') {
+                x = -x;
+            }
+            var origin = getOrigin();
+            return {
+                x: origin.x + x,
+                y: origin.y - y,
+                realX: x,
+                realY: y
+            };
+        }
+
+        // 更新参数和几何元素
+        function updateParams() {
+            var cSlider = document.getElementById('c-slider');
+            var aSlider = document.getElementById('a-slider');
+
+            state.c = parseInt(cSlider.value);
+            state.a = parseInt(aSlider.value);
+
+            document.getElementById('c-value').textContent = 'c = ' + state.c;
+            document.getElementById('a-value').textContent = 'a = ' + state.a;
+            document.getElementById('twoa-value').textContent = '= ' + (state.a * 2);
+
+            var warningEl = document.getElementById('param-warning');
+            var asymptotes = document.getElementById('asymptotes');
+            var vertices = document.getElementById('vertices');
+            var warningText = document.getElementById('warning-text');
+
+            var f1 = document.getElementById('f1-dot');
+            var f2 = document.getElementById('f2-dot');
+            var origin = getOrigin();
+            f1.setAttribute('cx', origin.x - state.c);
+            f2.setAttribute('cx', origin.x + state.c);
+
+            // 更新旁边的F1/F2文字标签位置
+            var f1Labels = document.querySelectorAll('#foci text');
+            f1Labels[0].setAttribute('x', origin.x - state.c - 5);
+            f1Labels[1].setAttribute('x', origin.x + state.c + 5);
+
+            var b = 0;
+            document.getElementById('hyperbola-right').setAttribute('opacity', 0);
+            document.getElementById('hyperbola-left').setAttribute('opacity', 0);
+
+            if (state.a < state.c) {
+                b = Math.sqrt(state.c*state.c - state.a*state.a);
+                warningEl.style.display = 'none';
+                warningText.setAttribute('opacity', 0);
+
+                // 更新渐近线
+                var slope = b / state.a;
+                document.getElementById('asymptote1').setAttribute('y1', origin.y - 200*slope);
+                document.getElementById('asymptote1').setAttribute('y2', origin.y + 200*slope);
+                document.getElementById('asymptote2').setAttribute('y1', origin.y + 200*slope);
+                document.getElementById('asymptote2').setAttribute('y2', origin.y - 200*slope);
+
+                // 更新顶点
+                document.getElementById('v1-dot').setAttribute('cx', origin.x - state.a);
+                document.getElementById('v2-dot').setAttribute('cx', origin.x + state.a);
+                document.getElementById('v1-label').setAttribute('x', origin.x - state.a - 5);
+                document.getElementById('v2-label').setAttribute('x', origin.x + state.a + 5);
+
+                // 更新a,b,c标注线段
+                document.getElementById('line-a').setAttribute('x2', origin.x + state.a);
+                document.getElementById('label-a').setAttribute('x', origin.x + state.a/2);
+                document.getElementById('line-c').setAttribute('x2', origin.x + state.c);
+                document.getElementById('label-c').setAttribute('x', origin.x + state.c/2);
+                document.getElementById('line-b').setAttribute('x1', origin.x + state.c);
+                document.getElementById('line-b').setAttribute('x2', origin.x + state.c);
+                document.getElementById('line-b').setAttribute('y1', origin.y);
+                document.getElementById('line-b').setAttribute('y2', origin.y + b);
+                document.getElementById('label-b').setAttribute('x', origin.x + state.c + 15);
+                document.getElementById('label-b').setAttribute('y', origin.y + b/2 + 5);
+
+                updateHyperbolaReference(state.a, b);
+
+                if (state.currentStep >= 3) {
+                    asymptotes.setAttribute('opacity', 1);
+                    vertices.setAttribute('opacity', 1);
+                }
+
+                resetTrace();
+                drawStaticHyperbola();
+            } else if (state.a === state.c) {
+                b = 0;
+                warningEl.style.display = 'block';
+                warningText.textContent = 'a = c：轨迹是两条射线';
+                warningText.setAttribute('opacity', 1);
+                resetTrace();
+            } else {
+                warningEl.style.display = 'block';
+                warningText.textContent = 'a > c：不存在轨迹';
+                warningText.setAttribute('opacity', 1);
+                resetTrace();
+            }
+
+            document.getElementById('b-value').textContent = state.a < state.c ? 'b ≈ ' + b.toFixed(1) : 'b不存在';
+
+            // 重新排版公式
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.startup.promise.then(function() {
+                    MathJax.typesetPromise();
+                });
+            }
+        }
+
+        // 更新双曲线参考路径
+        function updateHyperbolaReference(a, b) {
+            var origin = getOrigin();
+            function getPath(side) {
+                var d = '';
+                var steps = 100;
+                for (var i = 0; i <= steps; i++) {
+                    var t = -Math.PI/2.3 + Math.PI/2.3 * 2 * (i/steps);
+                    var cos_t = Math.cos(t);
+                    if (Math.abs(cos_t) < 0.02) continue;
+                    var x = a / cos_t;
+                    var y = b * Math.tan(t);
+                    if (side === 'left') x = -x;
+                    if (y > 205 || y < -205) continue;
+                    var sx = origin.x + x;
+                    var sy = origin.y - y;
+                    d += (d === '' ? 'M' : 'L') + sx + ',' + sy;
+                }
+                return d;
+            }
+            document.getElementById('hyperbola-right').setAttribute('d', getPath('right'));
+            document.getElementById('hyperbola-left').setAttribute('d', getPath('left'));
+        }
+
+        // 绘制静态双曲线用于参数调节预览
+        function drawStaticHyperbola() {
+            if (state.a >= state.c) return;
+            if (state.currentStep < 1) return;
+
+            document.getElementById('hyperbola-right').setAttribute('opacity', 0.3);
+            document.getElementById('hyperbola-left').setAttribute('opacity', 0.3);
+            document.getElementById('asymptotes').setAttribute('opacity', 0.6);
+            document.getElementById('vertices').setAttribute('opacity', 1);
+
+            var origin = getOrigin();
+            var p = hyperbolaPoint(0, 'right', state.a, state.c);
+            updatePointM(p.x, p.y);
+            updateDistances(p.x, p.y);
+            document.getElementById('point-m').setAttribute('opacity', 1);
+            document.getElementById('line-mf1').setAttribute('opacity', 1);
+            document.getElementById('line-mf2').setAttribute('opacity', 1);
+        }
+
+        // 更新M点位置和连线
+        function updatePointM(x, y) {
+            var origin = getOrigin();
+            var f1x = origin.x - state.c;
+            var f2x = origin.x + state.c;
+
+            document.getElementById('m-dot').setAttribute('cx', x);
+            document.getElementById('m-dot').setAttribute('cy', y);
+            document.getElementById('m-label').setAttribute('x', x + 10);
+            document.getElementById('m-label').setAttribute('y', y - 10);
+
+            document.getElementById('line-mf1').setAttribute('x1', f1x);
+            document.getElementById('line-mf1').setAttribute('y1', origin.y);
+            document.getElementById('line-mf1').setAttribute('x2', x);
+            document.getElementById('line-mf1').setAttribute('y2', y);
+
+            document.getElementById('line-mf2').setAttribute('x1', f2x);
+            document.getElementById('line-mf2').setAttribute('y1', origin.y);
+            document.getElementById('line-mf2').setAttribute('x2', x);
+            document.getElementById('line-mf2').setAttribute('y2', y);
+
+            addZipperTeeth(x, y);
+        }
+
+        // 添加拉链齿效果
+        function addZipperTeeth(mx, my) {
+            var origin = getOrigin();
+            var f1x = origin.x - state.c;
+            var f2x = origin.x + state.c;
+            var teethGroup = document.getElementById('zipper-teeth');
+            teethGroup.innerHTML = '';
+
+            for (var t = 0.15; t < 1; t += 0.12) {
+                var tx1 = f1x + (mx - f1x) * t;
+                var ty1 = origin.y + (my - origin.y) * t;
+                var len1 = Math.sqrt((mx-f1x)*(mx-f1x) + (my-origin.y)*(my-origin.y));
+                var perpX1 = -(my - origin.y) / len1 * 4;
+                var perpY1 = (mx - f1x) / len1 * 4;
+
+                var tooth1 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                tooth1.setAttribute('x1', tx1 - perpX1);
+                tooth1.setAttribute('y1', ty1 - perpY1);
+                tooth1.setAttribute('x2', tx1 + perpX1);
+                tooth1.setAttribute('y2', ty1 + perpY1);
+                tooth1.setAttribute('stroke', '#f59e0b');
+                tooth1.setAttribute('stroke-width', '1.5');
+                teethGroup.appendChild(tooth1);
+
+                var tx2 = f2x + (mx - f2x) * t;
+                var ty2 = origin.y + (my - origin.y) * t;
+                var len2 = Math.sqrt((mx-f2x)*(mx-f2x) + (my-origin.y)*(my-origin.y));
+                var perpX2 = -(my - origin.y) / len2 * 4;
+                var perpY2 = (mx - f2x) / len2 * 4;
+
+                var tooth2 = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                tooth2.setAttribute('x1', tx2 - perpX2);
+                tooth2.setAttribute('y1', ty2 - perpY2);
+                tooth2.setAttribute('x2', tx2 + perpX2);
+                tooth2.setAttribute('y2', ty2 + perpY2);
+                tooth2.setAttribute('stroke', '#2563eb');
+                tooth2.setAttribute('stroke-width', '1.5');
+                teethGroup.appendChild(tooth2);
+            }
+        }
+
+        // 更新实时距离数据
+        function updateDistances(mx, my) {
+            var origin = getOrigin();
+            var f1x = origin.x - state.c;
+            var f2x = origin.x + state.c;
+
+            var d1 = Math.sqrt((mx - f1x)*(mx - f1x) + (my - origin.y)*(my - origin.y));
+            var d2 = Math.sqrt((mx - f2x)*(mx - f2x) + (my - origin.y)*(my - origin.y));
+            var diff = Math.abs(d1 - d2);
+
+            document.getElementById('mf1-value').textContent = (d1 / state.scale).toFixed(1);
+            document.getElementById('mf2-value').textContent = (d2 / state.scale).toFixed(1);
+            document.getElementById('diff-value').textContent = '= ' + (diff / state.scale).toFixed(1);
+        }
+
+        // 更新步骤指示
+        function setStep(step) {
+            state.currentStep = step;
+            for (var i = 1; i <= 5; i++) {
+                var badge = document.getElementById('step' + i + '-badge');
+                if (i <= step) {
+                    badge.className = 'step-dot step-active';
+                } else {
+                    badge.className = 'step-dot step-inactive';
+                }
+            }
+
+            var hints = [
+                '提示：点击"播放"看完整演示，或"分步"逐步查看，也可拖动右侧滑块调整参数',
+                '步骤1：平面取两定点 <strong>F₁、F₂</strong> 作焦点，距离记为 <strong>2c</strong>',
+                '步骤2：拉链两端固定在 F₁、F₂，笔尖置于拉链头 M；两边长度差为定值 <strong>2a</strong>',
+                '步骤3：拉动拉链，M 移动时到两焦点的距离差绝对值始终保持 <strong>2a</strong> 不变',
+                '步骤4：M 画出的轨迹就是<strong>双曲线</strong>，分两支，满足 <strong>||MF₁|-|MF₂||=2a</strong>（2a&lt;2c）',
+                '步骤5：M 在左右两支间连续运动，两条焦半径与距离数据同步变化'
+            ];
+            document.getElementById('canvas-hint').innerHTML = hints[step];
+
+            if (state.a < state.c) {
+                document.getElementById('asymptotes').setAttribute('opacity', step >= 3 ? 0.6 : 0);
+                document.getElementById('vertices').setAttribute('opacity', step >= 2 ? 1 : 0);
+                document.getElementById('dimension-lines').setAttribute('opacity', step >= 4 ? 0.8 : 0);
+            }
+        }
+
+        // 重置轨迹
+        function resetTrace() {
+            state.tracePointsR = [];
+            state.tracePointsL = [];
+            document.getElementById('trace-right').setAttribute('d', '');
+            document.getElementById('trace-left').setAttribute('d', '');
+            document.getElementById('zipper-teeth').innerHTML = '';
+            document.getElementById('zipper-teeth').setAttribute('opacity', 0);
+            if (state.currentStep < 2) {
+                document.getElementById('mf1-value').textContent = '--';
+                document.getElementById('mf2-value').textContent = '--';
+                document.getElementById('diff-value').textContent = '--';
+            }
+        }
+
+        // 停止第5步M点运动
+        function stopMotion() {
+            state.motionActive = false;
+            if (state.motionFrame) {
+                cancelAnimationFrame(state.motionFrame);
+                state.motionFrame = null;
+            }
+        }
+
+        // 启动第5步M点在左右两支上的连续运动
+        function startMotion() {
+            stopMotion();
+            state.motionActive = true;
+            state.motionStart = performance.now();
+            var duration = 5200 / state.speed;
+            function frame(now) {
+                if (!state.motionActive) return;
+                var cycle = ((now - state.motionStart) % (duration * 2)) / (duration * 2);
+                var side = cycle < 0.5 ? 'right' : 'left';
+                var local = cycle < 0.5 ? cycle * 2 : (cycle - 0.5) * 2;
+                var phase = local < 0.5 ? local * 2 : 2 - local * 2;
+                var angle = -0.82 * Math.PI / 2 + 0.82 * Math.PI * phase;
+                var p = hyperbolaPoint(angle, side, state.a, state.c);
+                updatePointM(p.x, p.y);
+                updateDistances(p.x, p.y);
+                state.motionFrame = requestAnimationFrame(frame);
+            }
+            state.motionFrame = requestAnimationFrame(frame);
+        }
+
+        // 重置动画
+        function resetAnimation() {
+            stopMotion();
+            state.playing = false;
+            document.getElementById('btn-play').textContent = '▶ 播放';
+            state.c = 40;
+            state.a = 20;
+            document.getElementById('c-slider').value = 40;
+            document.getElementById('a-slider').value = 20;
+
+            // 更新焦点位置
+            var f1 = document.getElementById('f1-dot');
+            var f2 = document.getElementById('f2-dot');
+            var origin = getOrigin();
+            f1.setAttribute('cx', origin.x - state.c);
+            f2.setAttribute('cx', origin.x + state.c);
+            var f1Labels = document.querySelectorAll('#foci text');
+            f1Labels[0].setAttribute('x', origin.x - state.c - 5);
+            f1Labels[1].setAttribute('x', origin.x + state.c + 5);
+
+            // 更新数值显示
+            document.getElementById('c-value').textContent = 'c = ' + state.c;
+            document.getElementById('a-value').textContent = 'a = ' + state.a;
+            document.getElementById('twoa-value').textContent = '= ' + (state.a * 2);
+            var b = Math.sqrt(state.c*state.c - state.a*state.a);
+            document.getElementById('b-value').textContent = 'b ≈ ' + b.toFixed(1);
+            document.getElementById('param-warning').style.display = 'none';
+            document.getElementById('warning-text').setAttribute('opacity', 0);
+
+            // 更新双曲线参考
+            updateHyperbolaReference(state.a, b);
+
+            setStep(1);
+            resetTrace();
+            document.getElementById('point-m').setAttribute('opacity', 0);
+            document.getElementById('line-mf1').setAttribute('opacity', 0);
+            document.getElementById('line-mf2').setAttribute('opacity', 0);
+            document.getElementById('asymptotes').setAttribute('opacity', 0);
+            document.getElementById('vertices').setAttribute('opacity', 0);
+            document.getElementById('dimension-lines').setAttribute('opacity', 0);
+            document.getElementById('hyperbola-right').setAttribute('opacity', 0);
+            document.getElementById('hyperbola-left').setAttribute('opacity', 0);
+            document.getElementById('mf1-value').textContent = '--';
+            document.getElementById('mf2-value').textContent = '--';
+            document.getElementById('diff-value').textContent = '--';
+            document.getElementById('zipper-teeth').setAttribute('opacity', 0);
+        }
+
+        // 延时Promise
+        function wait(ms) {
+            return new Promise(function(resolve) {
+                setTimeout(resolve, ms);
+            });
+        }
+
+        // 动画绘制一支曲线
+        function animateTrace(side) {
+            return new Promise(function(resolve) {
+                var maxAngle = Math.PI * 0.82;
+                var duration = 3200 / state.speed;
+                var startTime = performance.now();
+                var resolved = false;
+
+                function frame(now) {
+                    if (!state.playing) {
+                        if (!resolved) { resolved = true; resolve(); }
+                        return;
+                    }
+
+                    var elapsed = now - startTime;
+                    var progress = Math.min(elapsed / duration, 1);
+                    var angle = -maxAngle/2 + maxAngle * progress;
+
+                    var p = hyperbolaPoint(angle, side, state.a, state.c);
+                    updatePointM(p.x, p.y);
+                    updateDistances(p.x, p.y);
+
+                    if (side === 'right') {
+                        state.tracePointsR.push({x: p.x, y: p.y});
+                        document.getElementById('trace-right').setAttribute('d', pointsToPath(state.tracePointsR));
+                    } else {
+                        state.tracePointsL.push({x: p.x, y: p.y});
+                        document.getElementById('trace-left').setAttribute('d', pointsToPath(state.tracePointsL));
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(frame);
+                    } else {
+                        if (!resolved) { resolved = true; resolve(); }
+                    }
+                }
+                requestAnimationFrame(frame);
+            });
+        }
+
+        // 点转SVG路径
+        function pointsToPath(points) {
+            if (points.length === 0) return '';
+            var d = 'M' + points[0].x + ',' + points[0].y;
+            for (var i = 1; i < points.length; i++) {
+                d += 'L' + points[i].x + ',' + points[i].y;
+            }
+            return d;
+        }
+
+        // 播放完整动画
+        async function playAnimation() {
+            if (state.a >= state.c) {
+                alert('请先将实半轴 a 调节为小于焦距 c，才能形成双曲线！');
+                return;
+            }
+
+            resetTrace();
+            state.playing = true;
+            document.getElementById('btn-play').textContent = '⏸ 暂停';
+            document.getElementById('point-m').setAttribute('opacity', 1);
+            document.getElementById('line-mf1').setAttribute('opacity', 1);
+            document.getElementById('line-mf2').setAttribute('opacity', 1);
+            document.getElementById('zipper-teeth').setAttribute('opacity', 1);
+            document.getElementById('hyperbola-right').setAttribute('opacity', 0);
+            document.getElementById('hyperbola-left').setAttribute('opacity', 0);
+
+            // 步骤1：展示焦点
+            setStep(1);
+            await wait(700/state.speed);
+
+            // 步骤2：拉链初始位置
+            setStep(2);
+            var origin = getOrigin();
+            var startP = hyperbolaPoint(0, 'right', state.a, state.c);
+            updatePointM(startP.x, startP.y);
+            updateDistances(startP.x, startP.y);
+            await wait(900/state.speed);
+
+            // 步骤3：绘制右支
+            setStep(3);
+            document.getElementById('hyperbola-right').setAttribute('opacity', 0.15);
+            await animateTrace('right');
+
+            if (!state.playing) return;
+
+            // 第3步只演示右支轨迹，停留后再进入第4步
+            await wait(700/state.speed);
+            if (!state.playing) return;
+
+            // 第4步：切换到左支，继续演示并最终形成完整双曲线
+            setStep(4);
+            resetTrace();
+            startP = hyperbolaPoint(0, 'left', state.a, state.c);
+            updatePointM(startP.x, startP.y);
+            updateDistances(startP.x, startP.y);
+            document.getElementById('hyperbola-left').setAttribute('opacity', 0.15);
+            await animateTrace('left');
+
+            if (!state.playing) return;
+            await wait(300/state.speed);
+            resetTrace();
+            drawCompleteTrace('right');
+            drawCompleteTrace('left');
+            document.getElementById('hyperbola-right').setAttribute('opacity', 0.3);
+            document.getElementById('hyperbola-left').setAttribute('opacity', 0.3);
+            document.getElementById('dimension-lines').setAttribute('opacity', 0.8);
+
+            var endP = hyperbolaPoint(0, 'left', state.a, state.c);
+            updatePointM(endP.x, endP.y);
+            updateDistances(endP.x, endP.y);
+            await wait(500/state.speed);
+            if (!state.playing) return;
+            setStep(5);
+            document.getElementById('hyperbola-right').setAttribute('opacity', 0.3);
+            document.getElementById('hyperbola-left').setAttribute('opacity', 0.3);
+            startMotion();
+            return;
+        }
+
+        // 快速绘制完整一支
+        function drawCompleteTrace(side) {
+            var b = Math.sqrt(state.c*state.c - state.a*state.a);
+            var points = [];
+            var maxAngle = Math.PI * 0.82;
+            var steps = 120;
+
+            for (var i = 0; i <= steps; i++) {
+                var angle = -maxAngle/2 + maxAngle * (i/steps);
+                var p = hyperbolaPoint(angle, side, state.a, state.c);
+                points.push({x: p.x, y: p.y});
+            }
+
+            var pathD = pointsToPath(points);
+            if (side === 'right') {
+                document.getElementById('trace-right').setAttribute('d', pathD);
+            } else {
+                document.getElementById('trace-left').setAttribute('d', pathD);
+            }
+        }
+
+        // 单步执行
+        async function stepForward() {
+            if (state.a >= state.c) {
+                alert('请先将实半轴 a 调节为小于焦距 c！');
+                return;
+            }
+
+            if (state.currentStep >= 5) return;
+
+            if (state.playing || state.motionActive) {
+                state.playing = false;
+                stopMotion();
+                document.getElementById('btn-play').textContent = '▶ 播放';
+                return;
+            }
+
+            var nextStep = state.currentStep + 1;
+
+            document.getElementById('point-m').setAttribute('opacity', 1);
+            document.getElementById('line-mf1').setAttribute('opacity', 1);
+            document.getElementById('line-mf2').setAttribute('opacity', 1);
+            document.getElementById('zipper-teeth').setAttribute('opacity', 1);
+
+            setStep(nextStep);
+
+            if (nextStep === 2) {
+                resetTrace();
+                document.getElementById('hyperbola-right').setAttribute('opacity', 0.1);
+                document.getElementById('hyperbola-left').setAttribute('opacity', 0);
+                var p = hyperbolaPoint(0, 'right', state.a, state.c);
+                updatePointM(p.x, p.y);
+                updateDistances(p.x, p.y);
+            }
+
+            if (nextStep >= 3) {
+                resetTrace();
+                drawCompleteTrace('right');
+                drawCompleteTrace('left');
+                document.getElementById('hyperbola-right').setAttribute('opacity', 0.3);
+                document.getElementById('hyperbola-left').setAttribute('opacity', 0.3);
+                var p2 = hyperbolaPoint(0, 'right', state.a, state.c);
+                updatePointM(p2.x, p2.y);
+                updateDistances(p2.x, p2.y);
+            }
+
+            if (nextStep === 5) {
+                state.playing = true;
+                document.getElementById('btn-play').textContent = '⏸ 暂停';
+                startMotion();
+            }
+
+        }
+
+        // 播放指定单步
+        async function playSingleStep(step) {
+            if (state.a >= state.c) {
+                alert('请先将实半轴 a 调节为小于焦距 c！');
+                return;
+            }
+            if (state.playing) return;
+            state.playing = true;
+            document.getElementById('btn-play').textContent = '⏸ 暂停';
+            document.getElementById('point-m').setAttribute('opacity', 1);
+            document.getElementById('line-mf1').setAttribute('opacity', 1);
+            document.getElementById('line-mf2').setAttribute('opacity', 1);
+            document.getElementById('zipper-teeth').setAttribute('opacity', 1);
+            resetTrace();
+
+            if (step === 1) {
+                setStep(1);
+                document.getElementById('point-m').setAttribute('opacity', 0);
+                await wait(800 / state.speed);
+            } else if (step === 2) {
+                setStep(2);
+                var p2 = hyperbolaPoint(0, 'right', state.a, state.c);
+                updatePointM(p2.x, p2.y);
+                updateDistances(p2.x, p2.y);
+                document.getElementById('hyperbola-right').setAttribute('opacity', 0.1);
+                await wait(1000 / state.speed);
+            } else if (step === 3) {
+                setStep(3);
+                var p3 = hyperbolaPoint(0, 'right', state.a, state.c);
+                updatePointM(p3.x, p3.y);
+                updateDistances(p3.x, p3.y);
+                document.getElementById('hyperbola-right').setAttribute('opacity', 0.15);
+                await wait(250 / state.speed);
+                await animateTrace('right');
+            } else if (step === 4) {
+                setStep(4);
+                var p4 = hyperbolaPoint(0, 'left', state.a, state.c);
+                updatePointM(p4.x, p4.y);
+                updateDistances(p4.x, p4.y);
+                document.getElementById('hyperbola-left').setAttribute('opacity', 0.15);
+                await wait(250 / state.speed);
+                await animateTrace('left');
+                if (state.playing) {
+                    resetTrace();
+                    drawCompleteTrace('right');
+                    drawCompleteTrace('left');
+                    document.getElementById('hyperbola-right').setAttribute('opacity', 0.3);
+                    document.getElementById('hyperbola-left').setAttribute('opacity', 0.3);
+                    document.getElementById('dimension-lines').setAttribute('opacity', 0.8);
+                    updatePointM(p4.x, p4.y);
+                    updateDistances(p4.x, p4.y);
+                }
+            } else if (step === 5) {
+                setStep(5);
+                drawCompleteTrace('right');
+                drawCompleteTrace('left');
+                document.getElementById('hyperbola-right').setAttribute('opacity', 0.3);
+                document.getElementById('hyperbola-left').setAttribute('opacity', 0.3);
+                startMotion();
+                return;
+            }
+            state.playing = false;
+            document.getElementById('btn-play').textContent = '▶ 播放';
+        }
+
+        // 练习题逻辑
+        function initPractice() {
+            var options = document.querySelectorAll('.practice-option');
+            var feedback = document.getElementById('practice-feedback');
+
+            options.forEach(function(opt) {
+                opt.addEventListener('click', function() {
+                    if (opt.classList.contains('correct') || opt.classList.contains('wrong')) return;
+
+                    options.forEach(function(o) { o.style.pointerEvents = 'none'; });
+
+                    if (opt.getAttribute('data-correct') === 'true') {
+                        opt.classList.add('correct');
+                        feedback.className = 'mt-2 text-sm p-2 rounded';
+                        feedback.style.background = '#f0fdf4';
+                        feedback.style.color = '#15803d';
+                        feedback.innerHTML = '✓ 回答正确：<ul class="list-disc ml-4 mt-1"><li><strong>距离差为常数</strong>：2a = 6</li><li>常数<strong>小于</strong>焦距：2c = 10</li><li>满足双曲线定义 → 轨迹是双曲线</li></ul>';
+                    } else {
+                        opt.classList.add('wrong');
+                        options.forEach(function(o) {
+                            if (o.getAttribute('data-correct') === 'true') o.classList.add('correct');
+                        });
+                        feedback.className = 'mt-2 text-sm p-2 rounded';
+                        feedback.style.background = '#fef2f2';
+                        feedback.style.color = '#dc2626';
+                        feedback.innerHTML = '✗ 回答错误，关键在于比较 2a 与 2c：<ul class="list-disc ml-4 mt-1"><li>2a = 6 &lt; 2c = 10 → 满足<strong>双曲线</strong>定义</li><li>椭圆对应的是距离<strong>之和</strong>为定值，不是差</li><li>只有 2a = 2c 时轨迹才是两条射线</li></ul>';
+                    }
+                    feedback.classList.remove('hidden');
+
+                    if (window.MathJax && MathJax.typesetPromise) {
+                        MathJax.startup.promise.then(function() {
+                            MathJax.typesetPromise([feedback]);
+                        });
+                    }
+                });
+            });
+        }
+
+        // 初始化
+        function init() {
+            document.getElementById('c-slider').addEventListener('input', function() {
+                if (state.playing) return;
+                resetTrace();
+                updateParams();
+            });
+
+            document.getElementById('a-slider').addEventListener('input', function() {
+                if (state.playing) return;
+                resetTrace();
+                updateParams();
+            });
+
+            document.getElementById('speed-slider').addEventListener('input', function(e) {
+                state.speed = parseFloat(e.target.value);
+                document.getElementById('speed-value').textContent = state.speed + 'x';
+            });
+
+            document.getElementById('btn-play').addEventListener('click', function() {
+                if (state.playing || state.motionActive) {
+                    state.playing = false;
+                    stopMotion();
+                    document.getElementById('btn-play').textContent = '▶ 播放';
+                } else {
+                    playAnimation();
+                }
+            });
+
+            document.getElementById('btn-reset').addEventListener('click', resetAnimation);
+            document.getElementById('btn-step').addEventListener('click', stepForward);
+            [1, 2, 3, 4, 5].forEach(function(step) {
+                document.getElementById('btn-step-play-' + step).addEventListener('click', function() {
+                    playSingleStep(step);
+                });
+            });
+
+            resetAnimation();
+            initPractice();
+
+            setTimeout(function() {
+                document.getElementById('point-m').setAttribute('opacity', 0);
+            }, 200);
+        }
+
+        window.addEventListener('load', function() {
+            setTimeout(init, 150);
+        });
+    </script>
+</body>
+</html>

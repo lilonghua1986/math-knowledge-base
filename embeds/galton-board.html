@@ -1,30 +1,27 @@
 <!doctype html>
 <html lang="zh-CN">
 <head>
-<meta http-equiv="Content-Security-Policy" content="img-src 'self' data: blob: https://*.fbcontent.cn https://*.aliyuncs.com https://storage.googleapis.com; media-src 'self' data: blob: https://*.fbcontent.cn https://*.aliyuncs.com https://storage.googleapis.com;">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>高尔顿板二项分布模拟器</title>
     <!-- 引入 MathJax -->
-    <script src="https://metis-online.fbcontent.cn/metis-misc/MathJax-3.2.2/es5/tex-mml-chtml.js"></script>
-    <!-- 引入 Anime.js -->
-    <script src="https://metis-online.fbcontent.cn/metis-misc/zZZY40t7WJC7UdQCPACm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
     <style>
         :root {
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --accent-color: #3b82f6;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --accent-color: #2563eb;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
             --peg-color: #94a3b8;
-            --ball-color: #fbbf24;
-            --border-color: #334155;
-            --wood-color: #78350f;
+            --ball-color: #f59e0b;
+            --border-color: #e2e8f0;
+            --wood-color: #cbd5e1;
         }
 
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
             background-color: var(--bg-color);
             color: var(--text-primary);
             display: flex;
@@ -53,7 +50,7 @@
             display: flex;
             flex-direction: column;
             overflow: hidden;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 30px -10px rgba(30, 41, 59, 0.12);
         }
 
         .board-container {
@@ -62,7 +59,7 @@
             margin: 20px;
             border: 8px solid var(--wood-color);
             border-radius: 12px;
-            background: #020617;
+            background: #f1f5f9;
             overflow: hidden;
         }
 
@@ -95,7 +92,7 @@
             gap: 12px;
         }
         .stat-item {
-            background: rgba(15, 23, 42, 0.5);
+            background: var(--bg-color);
             padding: 10px;
             border-radius: 8px;
         }
@@ -120,14 +117,14 @@
             cursor: pointer;
             font-weight: 600;
             transition: all 0.2s;
-            background: #334155;
-            color: white;
+            background: #e2e8f0;
+            color: var(--text-primary);
         }
-        button:hover { transform: translateY(-2px); filter: brightness(1.2); }
+        button:hover { transform: translateY(-2px); filter: brightness(1.05); }
         button:active { transform: scale(0.95); }
-        .btn-primary { background: var(--accent-color); }
-        .btn-danger { background: #ef4444; }
-        .btn-warning { background: #f59e0b; }
+        .btn-primary { background: var(--accent-color); color: white; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-warning { background: #f59e0b; color: white; }
 
         .slider-container {
             margin-top: 8px;
@@ -159,7 +156,7 @@
         .bar-container {
             width: 60px;
             height: 8px;
-            background: #334155;
+            background: #e2e8f0;
             border-radius: 4px;
             overflow: hidden;
             display: inline-block;
@@ -171,7 +168,7 @@
             font-size: 0.9rem;
             text-align: center;
             padding: 10px;
-            background: rgba(0,0,0,0.2);
+            background: var(--bg-color);
             border-radius: 8px;
         }
 
@@ -180,7 +177,7 @@
         .side-panel::-webkit-scrollbar-track { background: transparent; }
         .side-panel::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
     </style>
-<script type="application/json" id="fx-resource-config" data-fx-resource-runtime="2">{"chatId":"F949852832BF5DDEE5E577111FA7004A","env":"online","onlineUrl":"https://musk-online.fbcontent.cn/pub-musk-ai-studio/workflow/file/document/W3VX9uA9xvsaZ5FYU9Fr8B.html?v=1"}</script><script async src="https://www.feixianglaoshi.com/resource-runtime/v2.js" data-fx-resource-runtime="2"></script></head>
+</head>
 <body>
 
 <div class="container">
@@ -462,7 +459,7 @@
             const grad = ctx.createRadialGradient(p.x - 1, p.y - 1, 0, p.x, p.y, PEG_RADIUS);
             grad.addColorStop(0, '#fff');
             grad.addColorStop(0.4, varColor('--peg-color'));
-            grad.addColorStop(1, '#334155');
+            grad.addColorStop(1, '#64748b');
             ctx.fillStyle = grad;
             ctx.fill();
         });
@@ -502,7 +499,7 @@
             }
 
             if (count > BIN_MAX_VISUAL) {
-                ctx.fillStyle = "#fff";
+                ctx.fillStyle = "#1e293b";
                 ctx.font = "10px Arial";
                 ctx.textAlign = "center";
                 ctx.fillText(`+${count - BIN_MAX_VISUAL}`, xBase, binTopY + 15);

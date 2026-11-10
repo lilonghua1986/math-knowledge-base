@@ -134,6 +134,9 @@ let resizeHandler = null;
 let planeMesh = null;
 let sectionMesh = null;
 let sectionOutline = null;
+let vertexGroup = null;
+let autoPlaying = false;
+let autoPlayStart = 0;
 
 function destroyCubeSection3D() {
   if (rafId !== null) cancelAnimationFrame(rafId);
@@ -145,12 +148,21 @@ function destroyCubeSection3D() {
   if (controls) controls.dispose();
   if (sectionMesh) sectionMesh.geometry.dispose();
   if (sectionOutline) sectionOutline.geometry.dispose();
+  if (vertexGroup) {
+    vertexGroup.children.forEach((m) => {
+      m.geometry.dispose();
+      m.material.dispose();
+    });
+  }
   if (renderer) {
     renderer.dispose();
     renderer.domElement.remove();
   }
-  renderer = scene = camera = controls = planeMesh = sectionMesh = sectionOutline = null;
+  autoPlaying = false;
+  renderer = scene = camera = controls = planeMesh = sectionMesh = sectionOutline = vertexGroup = null;
 }
+
+const SHAPE_NAMES = { 3: "三角形", 4: "四边形", 5: "五边形", 6: "六边形" };
 
 function initCubeSection3D(container) {
   destroyCubeSection3D();
@@ -175,11 +187,13 @@ function initCubeSection3D(container) {
         <input type="range" id="c3d-offset" min="-100" max="100" step="1" value="0">
         <span id="c3d-offset-val"></span>
       </label>
+      <p class="demo3d-conic-label">当前截面：<strong id="c3d-shape-label">—</strong></p>
       <div class="demo3d-presets">
         <button type="button" data-preset="triangle">过顶点（三角形）</button>
         <button type="button" data-preset="square">平行于底面（正方形）</button>
         <button type="button" data-preset="rect">对角切割（矩形）</button>
         <button type="button" data-preset="hexagon">垂直体对角线（正六边形）</button>
+        <button type="button" id="c3d-autoplay">▶ 自动演示</button>
       </div>
       <p class="demo3d-hint">拖动滑块改变切割平面；鼠标拖动旋转视角、滚轮缩放、右键拖动平移整个场景。</p>
     </div>
@@ -232,9 +246,9 @@ function initCubeSection3D(container) {
   planeMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(3.6, 3.6),
     new THREE.MeshBasicMaterial({
-      color: 0x60a5fa,
+      color: 0xdb2777,
       transparent: true,
-      opacity: 0.12,
+      opacity: 0.1,
       side: THREE.DoubleSide,
       depthWrite: false,
     })
@@ -244,9 +258,9 @@ function initCubeSection3D(container) {
   sectionMesh = new THREE.Mesh(
     new THREE.BufferGeometry(),
     new THREE.MeshBasicMaterial({
-      color: 0x2563eb,
+      color: 0xf59e0b,
       transparent: true,
-      opacity: 0.45,
+      opacity: 0.5,
       side: THREE.DoubleSide,
       depthWrite: false,
     })
@@ -255,9 +269,12 @@ function initCubeSection3D(container) {
 
   sectionOutline = new THREE.LineLoop(
     new THREE.BufferGeometry(),
-    new THREE.LineBasicMaterial({ color: 0x2563eb })
+    new THREE.LineBasicMaterial({ color: 0xf59e0b })
   );
   scene.add(sectionOutline);
+
+  vertexGroup = new THREE.Group();
+  scene.add(vertexGroup);
 
   const thetaInput = container.querySelector("#c3d-theta");
   const phiInput = container.querySelector("#c3d-phi");
@@ -265,6 +282,8 @@ function initCubeSection3D(container) {
   const thetaVal = container.querySelector("#c3d-theta-val");
   const phiVal = container.querySelector("#c3d-phi-val");
   const offsetVal = container.querySelector("#c3d-offset-val");
+  const shapeLabel = container.querySelector("#c3d-shape-label");
+  const autoplayBtn = container.querySelector("#c3d-autoplay");
 
   function updateGeometry(thetaDeg, phiDeg, frac) {
     const n = sphericalToNormal(thetaDeg, phiDeg);
@@ -276,9 +295,16 @@ function initCubeSection3D(container) {
     planeMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), nv);
 
     const result = computeSectionPolygon(n, d);
+    vertexGroup.children.forEach((m) => {
+      m.geometry.dispose();
+      m.material.dispose();
+    });
+    vertexGroup.clear();
+
     if (!result) {
       sectionMesh.visible = false;
       sectionOutline.visible = false;
+      shapeLabel.textContent = "平面未与正方体相交";
       return;
     }
     sectionMesh.visible = true;
@@ -304,6 +330,17 @@ function initCubeSection3D(container) {
     points.forEach((p) => outlineVerts.push(p[0], p[1], p[2]));
     outlineGeo.setAttribute("position", new THREE.Float32BufferAttribute(outlineVerts, 3));
     sectionOutline.geometry = outlineGeo;
+
+    points.forEach((p) => {
+      const marker = new THREE.Mesh(
+        new THREE.SphereGeometry(0.035, 12, 12),
+        new THREE.MeshBasicMaterial({ color: 0xdb2777 })
+      );
+      marker.position.set(p[0], p[1], p[2]);
+      vertexGroup.add(marker);
+    });
+
+    shapeLabel.textContent = `${SHAPE_NAMES[points.length] || points.length + "边形"}（${points.length} 个顶点）`;
   }
 
   function updateFromSliders() {
@@ -316,12 +353,27 @@ function initCubeSection3D(container) {
     updateGeometry(theta, phi, frac);
   }
 
+  function stopAutoplay() {
+    autoPlaying = false;
+    autoplayBtn.textContent = "▶ 自动演示";
+  }
+
   [thetaInput, phiInput, offsetInput].forEach((input) =>
-    input.addEventListener("input", updateFromSliders)
+    input.addEventListener("input", () => {
+      stopAutoplay();
+      updateFromSliders();
+    })
   );
 
-  container.querySelectorAll(".demo3d-presets button").forEach((btn) => {
+  autoplayBtn.addEventListener("click", () => {
+    autoPlaying = !autoPlaying;
+    autoplayBtn.textContent = autoPlaying ? "⏸ 停止演示" : "▶ 自动演示";
+    if (autoPlaying) autoPlayStart = performance.now();
+  });
+
+  container.querySelectorAll(".demo3d-presets button[data-preset]").forEach((btn) => {
     btn.addEventListener("click", () => {
+      stopAutoplay();
       const preset = PRESETS[btn.dataset.preset];
       thetaInput.value = preset.theta;
       phiInput.value = preset.phi;
@@ -334,6 +386,12 @@ function initCubeSection3D(container) {
 
   function animate() {
     rafId = requestAnimationFrame(animate);
+    if (autoPlaying) {
+      const elapsed = (performance.now() - autoPlayStart) / 1000;
+      const frac = Math.sin(elapsed * 0.6);
+      offsetInput.value = Math.round(frac * 100);
+      updateFromSliders();
+    }
     controls.update();
     renderer.render(scene, camera);
   }

@@ -71,13 +71,13 @@ function chainRuns(pts) {
   return { runs, closed: false };
 }
 
-function classifyLabel(betaDeg, d) {
-  if (Math.abs(d) < 0.02) return "退化情形：平面过顶点，截线缩成一点";
+function classifyInfo(betaDeg, d) {
+  if (Math.abs(d) < 0.02) return { name: "退化情形：平面过顶点，截线缩成一点", equation: "" };
   const thresh = 90 - ALPHA_DEG;
-  if (betaDeg < 0.5) return "圆";
-  if (betaDeg < thresh - 0.5) return "椭圆";
-  if (Math.abs(betaDeg - thresh) <= 0.5) return "抛物线";
-  return "双曲线";
+  if (betaDeg < 0.5) return { name: "圆", equation: "x² + y² = r²" };
+  if (betaDeg < thresh - 0.5) return { name: "椭圆", equation: "x²/a² + y²/b² = 1" };
+  if (Math.abs(betaDeg - thresh) <= 0.5) return { name: "抛物线", equation: "y² = 2px" };
+  return { name: "双曲线", equation: "x²/a² − y²/b² = 1" };
 }
 
 const PRESETS = {
@@ -97,6 +97,8 @@ let resizeHandler = null;
 let planeMesh = null;
 let curveGroup = null;
 let apexMarker = null;
+let autoPlaying = false;
+let autoPlayStart = 0;
 
 function disposeObject3D(obj) {
   if (!obj) return;
@@ -119,6 +121,7 @@ function destroyConeSection3D() {
     renderer.dispose();
     renderer.domElement.remove();
   }
+  autoPlaying = false;
   renderer = scene = camera = controls = planeMesh = curveGroup = apexMarker = null;
 }
 
@@ -141,6 +144,7 @@ function initConeSection3D(container) {
   container.innerHTML = `
     <div class="demo3d-canvas-wrap"></div>
     <div class="demo3d-controls">
+      <p class="demo3d-conic-label" style="font-size:16px">当前截线：<strong id="k3d-conic-label">—</strong>　<span id="k3d-conic-equation" style="color:#475569"></span></p>
       <label>平面倾斜角 β（与水平面夹角）
         <input type="range" id="k3d-beta" min="0" max="90" step="0.5" value="0">
         <span id="k3d-beta-val"></span>
@@ -149,13 +153,18 @@ function initConeSection3D(container) {
         <input type="range" id="k3d-offset" min="-100" max="100" step="1" value="50">
         <span id="k3d-offset-val"></span>
       </label>
-      <p class="demo3d-conic-label">当前截线：<strong id="k3d-conic-label">—</strong></p>
       <div class="demo3d-presets">
         <button type="button" data-preset="circle">圆</button>
         <button type="button" data-preset="ellipse">椭圆</button>
         <button type="button" data-preset="parabola">抛物线</button>
         <button type="button" data-preset="hyperbola">双曲线</button>
+        <button type="button" id="k3d-autoplay">▶ 自动演示</button>
       </div>
+      <p class="demo3d-hint">
+        <span style="color:#64748b">■</span> 双圆锥
+        <span style="color:#db2777">■</span> 切割平面
+        <span style="color:#16a34a">■</span> 截线（圆锥曲线）
+      </p>
       <p class="demo3d-hint">拖动滑块改变切割平面；鼠标拖动旋转视角、滚轮缩放、右键拖动平移整个场景。</p>
     </div>
   `;
@@ -176,6 +185,14 @@ function initConeSection3D(container) {
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xf8fafc);
 
+  scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+  const sunLight = new THREE.DirectionalLight(0xffffff, 0.7);
+  sunLight.position.set(3, 4, 2);
+  scene.add(sunLight);
+  const fillLight = new THREE.DirectionalLight(0xffffff, 0.3);
+  fillLight.position.set(-2, -1, -3);
+  scene.add(fillLight);
+
   camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
   camera.position.set(3.0, 2.0, 3.4);
 
@@ -190,10 +207,12 @@ function initConeSection3D(container) {
   controls.target.set(0, 0, 0);
 
   // 双圆锥：半透明曲面（高精度）+ 线框（低精度，母线+底圆）
-  const surfaceMat = new THREE.MeshBasicMaterial({
+  const surfaceMat = new THREE.MeshStandardMaterial({
     color: 0x94a3b8,
     transparent: true,
-    opacity: 0.1,
+    opacity: 0.18,
+    roughness: 0.6,
+    metalness: 0.05,
     side: THREE.DoubleSide,
   });
   const edgeMat = new THREE.LineBasicMaterial({ color: 0x334155 });
@@ -208,7 +227,7 @@ function initConeSection3D(container) {
   planeMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(2.6, 2.6),
     new THREE.MeshBasicMaterial({
-      color: 0x60a5fa,
+      color: 0xdb2777,
       transparent: true,
       opacity: 0.12,
       side: THREE.DoubleSide,
@@ -222,7 +241,7 @@ function initConeSection3D(container) {
 
   apexMarker = new THREE.Mesh(
     new THREE.SphereGeometry(0.025, 16, 16),
-    new THREE.MeshBasicMaterial({ color: 0x2563eb })
+    new THREE.MeshBasicMaterial({ color: 0x16a34a })
   );
   apexMarker.visible = false;
   scene.add(apexMarker);
@@ -232,6 +251,8 @@ function initConeSection3D(container) {
   const betaVal = container.querySelector("#k3d-beta-val");
   const offsetVal = container.querySelector("#k3d-offset-val");
   const conicLabel = container.querySelector("#k3d-conic-label");
+  const conicEquation = container.querySelector("#k3d-conic-equation");
+  const autoplayBtn = container.querySelector("#k3d-autoplay");
 
   function updateGeometry(betaDeg, d) {
     const beta = (betaDeg * Math.PI) / 180;
@@ -249,15 +270,12 @@ function initConeSection3D(container) {
 
     runs.forEach((run) => {
       if (run.length < 2) return;
-      const verts = [];
-      run.forEach((p) => verts.push(p[0], p[1], p[2]));
-      const geo = new THREE.BufferGeometry();
-      geo.setAttribute("position", new THREE.Float32BufferAttribute(verts, 3));
       const isFullLoop = closed && run.length === N_SAMPLES;
-      const line = isFullLoop
-        ? new THREE.LineLoop(geo, new THREE.LineBasicMaterial({ color: 0x2563eb }))
-        : new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0x2563eb }));
-      curveGroup.add(line);
+      const vec3Points = run.map((p) => new THREE.Vector3(p[0], p[1], p[2]));
+      const curve3 = new THREE.CatmullRomCurve3(vec3Points, isFullLoop);
+      const tubeGeo = new THREE.TubeGeometry(curve3, Math.max(run.length, 8), 0.014, 8, isFullLoop);
+      const tube = new THREE.Mesh(tubeGeo, new THREE.MeshBasicMaterial({ color: 0x16a34a }));
+      curveGroup.add(tube);
 
       if (isFullLoop) {
         const cx = run.reduce((s, p) => s + p[0], 0) / run.length;
@@ -275,9 +293,9 @@ function initConeSection3D(container) {
         const fillMesh = new THREE.Mesh(
           fillGeo,
           new THREE.MeshBasicMaterial({
-            color: 0x2563eb,
+            color: 0x16a34a,
             transparent: true,
-            opacity: 0.4,
+            opacity: 0.25,
             side: THREE.DoubleSide,
             depthWrite: false,
           })
@@ -286,7 +304,9 @@ function initConeSection3D(container) {
       }
     });
 
-    conicLabel.textContent = classifyLabel(betaDeg, d);
+    const info = classifyInfo(betaDeg, d);
+    conicLabel.textContent = info.name;
+    conicEquation.textContent = info.equation;
   }
 
   function updateFromSliders() {
@@ -298,10 +318,27 @@ function initConeSection3D(container) {
     updateGeometry(betaDeg, d);
   }
 
-  [betaInput, offsetInput].forEach((input) => input.addEventListener("input", updateFromSliders));
+  function stopAutoplay() {
+    autoPlaying = false;
+    autoplayBtn.textContent = "▶ 自动演示";
+  }
 
-  container.querySelectorAll(".demo3d-presets button").forEach((btn) => {
+  [betaInput, offsetInput].forEach((input) =>
+    input.addEventListener("input", () => {
+      stopAutoplay();
+      updateFromSliders();
+    })
+  );
+
+  autoplayBtn.addEventListener("click", () => {
+    autoPlaying = !autoPlaying;
+    autoplayBtn.textContent = autoPlaying ? "⏸ 停止演示" : "▶ 自动演示";
+    if (autoPlaying) autoPlayStart = performance.now();
+  });
+
+  container.querySelectorAll(".demo3d-presets button[data-preset]").forEach((btn) => {
     btn.addEventListener("click", () => {
+      stopAutoplay();
       const preset = PRESETS[btn.dataset.preset];
       betaInput.value = preset.beta;
       offsetInput.value = Math.round((preset.d / OFFSET_SCALE) * 100);
@@ -313,6 +350,12 @@ function initConeSection3D(container) {
 
   function animate() {
     rafId = requestAnimationFrame(animate);
+    if (autoPlaying) {
+      const elapsed = (performance.now() - autoPlayStart) / 1000;
+      const betaDeg = 45 + 45 * Math.sin(elapsed * 0.5);
+      betaInput.value = Math.max(0, Math.min(90, betaDeg));
+      updateFromSliders();
+    }
     controls.update();
     renderer.render(scene, camera);
   }

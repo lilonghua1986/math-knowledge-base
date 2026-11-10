@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>基本不等式的几何解释</title>
+  <script>
+    window.MathJax = {
+      tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+      svg: { fontCache: 'global' },
+      startup: { typeset: false }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --surface-2: #eef4ff;
+      --line: #e2e8f0;
+      --text: #1e293b;
+      --muted: #475569;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-soft: rgba(37,99,235,.08);
+      --accent: #f59e0b;
+      --accent-text: #b45309;
+      --accent-soft: rgba(245,158,11,.12);
+      --shadow: 0 10px 30px -10px rgba(30,41,59,.12);
+      --radius: 22px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; min-height: 100%; background: var(--bg); color: var(--text); font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; }
+    body { overflow-x: hidden; }
+    button, input { font: inherit; }
+    button { cursor: pointer; }
+    .page { min-height: 100vh; padding: 34px clamp(20px, 4vw, 64px) 44px; background: radial-gradient(circle at 80% 0%, rgba(37,99,235,.05), transparent 40%), var(--bg); }
+    .shell { max-width: 1440px; margin: 0 auto; }
+    .topbar { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 26px; }
+    .eyebrow { color: var(--accent-text); font-size: 13px; letter-spacing: .16em; font-weight: 700; text-transform: uppercase; margin-bottom: 8px; }
+    h1 { margin: 0; font-size: clamp(28px, 4vw, 48px); line-height: 1.12; letter-spacing: -.04em; }
+    .subtitle { margin: 12px 0 0; color: var(--muted); font-size: clamp(14px, 1.5vw, 18px); line-height: 1.6; max-width: 800px; }
+    .subtitle strong { color: var(--text); }
+    .top-actions { display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end; padding-top: 8px; }
+    .button { border: 1px solid var(--line); border-radius: 12px; padding: 11px 15px; background: var(--surface); color: var(--text); transition: transform .18s ease, border-color .18s ease, background .18s ease; }
+    .button:hover { transform: translateY(-1px); border-color: var(--primary); background: var(--surface-2); }
+    .button.primary { border-color: transparent; background: var(--primary); color: #ffffff; font-weight: 800; }
+    .button.primary:hover { background: var(--primary-hover); }
+    .layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(330px, .8fr); gap: 20px; align-items: stretch; }
+    .layout > *, .side, .side-card, .formula-box, .main-formula { min-width: 0; }
+    .stage-card, .side-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); }
+    .stage-card { overflow: hidden; }
+    .stage-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 22px; border-bottom: 1px solid var(--line); }
+    .stage-head h2, .side-card h2 { margin: 0; font-size: 17px; letter-spacing: .01em; }
+    .hint { color: var(--muted); font-size: 13px; }
+    .stage-wrap { padding: 12px 16px 16px; }
+    #geometry { display: block; width: 100%; height: auto; min-height: 360px; border-radius: 16px; background: linear-gradient(180deg, #ffffff, var(--surface-2)); touch-action: none; }
+    .grid-line { stroke: rgba(100,116,139,.15); stroke-width: 1; }
+    .axis { stroke: rgba(30,41,59,.55); stroke-width: 2; }
+    .semicircle { fill: rgba(37,99,235,.06); stroke: var(--primary); stroke-width: 4; }
+    .diameter { stroke: var(--text); stroke-width: 3; }
+    .height { stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-dasharray: 9 7; }
+    .radius-line { stroke: var(--primary); stroke-width: 3; stroke-linecap: round; }
+    .point { fill: var(--text); stroke: var(--bg); stroke-width: 3; }
+    .drag-point { fill: var(--accent); stroke: #ffffff; stroke-width: 4; cursor: grab; }
+    .drag-point:active { cursor: grabbing; }
+    .svg-label { fill: var(--text); font-size: 15px; font-weight: 700; }
+    .svg-muted { fill: var(--muted); font-size: 13px; }
+    .svg-accent { fill: var(--accent-text); font-size: 16px; font-weight: 800; }
+    .svg-success { fill: var(--primary); font-size: 15px; font-weight: 800; }
+    .legend { display: flex; flex-wrap: wrap; gap: 12px 18px; padding: 6px 4px 0; color: var(--muted); font-size: 12px; }
+    .legend span { display: inline-flex; align-items: center; gap: 7px; }
+    .swatch { width: 14px; height: 4px; border-radius: 3px; display: inline-block; }
+    .swatch.blue { background: var(--primary); }
+    .swatch.yellow { background: var(--accent); }
+    .side { display: grid; gap: 20px; }
+    .side-card { padding: 20px; }
+    .side-card h2 { margin-bottom: 16px; }
+    .control-grid { display: grid; gap: 14px; }
+    .control-row { display: grid; grid-template-columns: 48px 1fr 60px; gap: 10px; align-items: center; }
+    .control-row label { color: var(--text); font-weight: 800; }
+    .control-row output { color: var(--primary); text-align: right; font-variant-numeric: tabular-nums; }
+    input[type="range"] { width: 100%; accent-color: var(--primary); }
+    .control-note { color: var(--muted); font-size: 12px; line-height: 1.6; margin: 10px 0 0; padding: 0; list-style: none; }
+    .control-note li { padding-left: 14px; position: relative; margin-top: 4px; }
+    .control-note li::before { content: "·"; position: absolute; left: 2px; color: var(--primary); font-weight: 800; }
+    .control-note strong { color: var(--text); }
+    .example-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .example-btn { border: 1px solid var(--line); border-radius: 10px; padding: 10px 8px; color: var(--muted); background: var(--bg); }
+    .example-btn:hover, .example-btn.active { border-color: var(--primary); color: var(--text); background: var(--primary-soft); }
+    .formula-box { border-radius: 16px; padding: 16px; background: var(--surface-2); border: 1px solid var(--line); overflow: hidden; }
+    .formula-box .main-formula { font-size: clamp(18px, 2.2vw, 30px); text-align: center; min-height: 72px; overflow-wrap: anywhere; display: grid; gap: 2px; align-content: center; }
+    .formula-line { min-width: 0; line-height: 1.35; }
+    .formula-line.secondary { color: var(--accent-text); font-size: .78em; }
+    .state { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border-radius: 13px; background: var(--primary-soft); border: 1px solid rgba(37,99,235,.25); margin-top: 14px; }
+    .state.equal { background: var(--accent-soft); border-color: rgba(245,158,11,.45); }
+    .state-title { font-weight: 800; }
+    .state-detail { color: var(--muted); font-size: 12px; text-align: right; }
+    .metrics { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 10px; }
+    .metric { border: 1px solid var(--line); border-radius: 14px; padding: 13px; background: var(--bg); min-height: 92px; }
+    .metric .label { color: var(--muted); font-size: 12px; margin-bottom: 8px; }
+    .metric .value { font-size: 20px; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--text); min-height: 29px; }
+    .metric .explain { color: var(--muted); font-size: 12px; margin-top: 4px; }
+    .callout { margin-top: 14px; color: var(--muted); line-height: 1.7; font-size: 13px; }
+    .callout strong { color: var(--text); }
+    .footer-note { margin-top: 18px; color: var(--muted); font-size: 12px; }
+    .footer-note strong { color: var(--text); }
+    .mjx-container { color: inherit !important; }
+    @media (max-width: 980px) { .layout { grid-template-columns: 1fr; } .side { grid-template-columns: repeat(2, minmax(0,1fr)); } .topbar { flex-direction: column; } .top-actions { justify-content: flex-start; } }
+    @media (max-width: 640px) { .page { padding: 24px 14px 32px; } .side { grid-template-columns: 1fr; } .stage-head { align-items: flex-start; flex-direction: column; } #geometry { min-height: 260px; } }
+  </style>
+</head>
+<body>
+  <main class="page">
+    <div class="shell">
+      <header class="topbar">
+        <div>
+          <div class="eyebrow">人教 A 版 · 必修一 · 数学</div>
+          <h1>基本不等式的几何解释</h1>
+          <p class="subtitle">拖动半圆直径上的分点，直观理解 <strong>几何平均数 ≤ 算术平均数</strong>。</p>
+        </div>
+        <div class="top-actions">
+          <button class="button primary" id="autoBtn" type="button" aria-pressed="false">自动移动</button>
+          <button class="button" id="resetBtn" type="button">重置图形</button>
+          <button class="button primary" id="exampleBtn" type="button">切换典型数据</button>
+        </div>
+      </header>
+
+      <section class="layout">
+        <section class="stage-card" aria-labelledby="stageTitle">
+          <div class="stage-head">
+            <h2 id="stageTitle">半圆模型：拖动橙色分点观察变化</h2>
+            <div class="hint">支持鼠标与触屏拖拽</div>
+          </div>
+          <div class="stage-wrap">
+            <svg id="geometry" viewBox="0 0 720 420" role="img" aria-label="半圆模型几何解释图">
+              <defs>
+                <lineargradient id="semiFill" x1="0" x2="0" y1="0" y2="1">
+                  <stop offset="0%" stop-color="#2563EB" stop-opacity=".14" />
+                  <stop offset="100%" stop-color="#2563EB" stop-opacity=".02" />
+                </lineargradient>
+              </defs>
+              <g id="grid"></g>
+              <path id="semiPath" class="semicircle" fill="url(#semiFill)" d="M90 330 A270 270 0 0 1 630 330 Z"></path>
+              <line id="diameter" class="diameter" x1="90" y1="330" x2="630" y2="330"></line>
+              <line id="radiusLine" class="radius-line" x1="360" y1="330" x2="0" y2="0"></line>
+              <line id="heightLine" class="height" x1="0" y1="330" x2="0" y2="0"></line>
+              <line id="aTick" class="axis" x1="90" y1="321" x2="90" y2="339"></line>
+              <line id="bTick" class="axis" x1="630" y1="321" x2="630" y2="339"></line>
+              <circle id="leftPoint" class="point" cx="90" cy="330" r="6"></circle>
+              <circle id="rightPoint" class="point" cx="630" cy="330" r="6"></circle>
+              <circle id="centerPoint" class="point" cx="360" cy="330" r="5"></circle>
+              <circle id="topPoint" class="point" cx="0" cy="0" r="6"></circle>
+              <circle id="dragPoint" class="drag-point" cx="0" cy="330" r="10" tabindex="0" aria-label="拖动直径分点"></circle>
+              <text id="leftLabel" class="svg-muted" x="78" y="356">A</text>
+              <text id="rightLabel" class="svg-muted" x="620" y="356">B</text>
+              <text id="centerLabel" class="svg-muted" x="350" y="350">O</text>
+              <text id="aLabel" class="svg-label" x="0" y="0">a</text>
+              <text id="bLabel" class="svg-label" x="0" y="0">b</text>
+              <text id="hLabel" class="svg-accent" x="0" y="0">h</text>
+              <text id="rLabel" class="svg-success" x="0" y="0">R</text>
+            </svg>
+            <div class="legend" aria-label="图例">
+              <span><i class="swatch blue"></i>半圆与半径 R</span>
+              <span><i class="swatch yellow"></i>垂高 h</span>
+            </div>
+          </div>
+        </section>
+
+        <aside class="side" aria-label="参数和不等式关系">
+          <section class="side-card">
+            <h2>参数控制</h2>
+            <div class="control-grid">
+              <div class="control-row">
+                <label for="aRange">a</label>
+                <input id="aRange" type="range" min="1" max="11" step="0.1" value="4">
+                <output id="aValue" for="aRange">4.0</output>
+              </div>
+              <div class="control-row">
+                <label for="bRange">b</label>
+                <input id="bRange" type="range" min="1" max="11" step="0.1" value="8">
+                <output id="bValue" for="bRange">8.0</output>
+              </div>
+            </div>
+            <ul class="control-note">
+              <li>拖动图中<strong>橙色点</strong>，同步改变 a、b。</li>
+              <li>始终保持 <strong>a + b = 12</strong>（直径不变）。</li>
+            </ul>
+            <div class="example-row">
+              <button class="example-btn" data-a="3" type="button">3 与 9</button>
+              <button class="example-btn" data-a="4" type="button">4 与 8</button>
+              <button class="example-btn" data-a="6" type="button">6 与 6</button>
+            </div>
+          </section>
+
+          <section class="side-card" id="formulaRoot">
+            <h2>不等式关系</h2>
+            <div class="formula-box">
+              <div class="main-formula" id="mainFormula">\[\sqrt{ab}\leq\frac{a+b}{2}\]</div>
+              <div class="state" id="equalityState">
+                <div class="state-title" id="stateTitle">不等式成立</div>
+                <div class="state-detail" id="stateDetail">当且仅当 a=b 时取等号</div>
+              </div>
+            </div>
+            <div class="metrics" style="margin-top: 14px;">
+              <div class="metric"><div class="label">直径总长</div><div class="value" id="sumValue">12.0</div><div class="explain">a+b</div></div>
+              <div class="metric"><div class="label">半圆半径</div><div class="value" id="radiusValue">6.0</div><div class="explain">R=(a+b)/2</div></div>
+              <div class="metric"><div class="label">几何平均数</div><div class="value" id="geoValue">5.66</div><div class="explain">√ab=h</div></div>
+              <div class="metric"><div class="label">算术平均数</div><div class="value" id="arithValue">6.00</div><div class="explain">(a+b)/2=R</div></div>
+              <div class="metric"><div class="label">差值</div><div class="value" id="gapValue">0.34</div><div class="explain">R−h</div></div>
+            </div>
+            <p class="callout" id="callout">半圆上任意点到圆心距离恒为 R，垂高 h 不超过 R。</p>
+          </section>
+        </aside>
+      </section>
+      <div class="footer-note"><strong>课堂提示</strong>：先预测 h 如何变化，再观察等号状态同步更新。</div>
+    </div>
+  </main>
+
+  <script>
+    (() => {
+      const svg = document.getElementById('geometry');
+      const total = 12;
+      const xLeft = 90;
+      const xRight = 630;
+      const yBase = 330;
+      const radiusPx = 270;
+      const scale = (xRight - xLeft) / total;
+      let a = 4;
+      let dragActive = false;
+      let autoPlaying = false;
+      let autoDirection = 1;
+      let autoLastTime = 0;
+      const autoSpeed = 1.8;
+      let exampleIndex = 0;
+      const examples = [3, 4, 6];
+
+      const $ = (id) => document.getElementById(id);
+      const els = {
+        aRange: $('aRange'), bRange: $('bRange'), aValue: $('aValue'), bValue: $('bValue'),
+        dragPoint: $('dragPoint'), topPoint: $('topPoint'), heightLine: $('heightLine'),
+        radiusLine: $('radiusLine'),
+        aLabel: $('aLabel'), bLabel: $('bLabel'), hLabel: $('hLabel'), rLabel: $('rLabel'),
+        sumValue: $('sumValue'), radiusValue: $('radiusValue'),
+        geoValue: $('geoValue'), arithValue: $('arithValue'), gapValue: $('gapValue'),
+        mainFormula: $('mainFormula'), formulaRoot: $('formulaRoot'), equalityState: $('equalityState'),
+        stateTitle: $('stateTitle'), stateDetail: $('stateDetail'), callout: $('callout'), autoBtn: $('autoBtn')
+      };
+
+      function fmt(n, digits = 2) { return Number(n).toFixed(digits); }
+      function geometryState() {
+        const b = total - a;
+        const h = Math.sqrt(a * b);
+        const R = total / 2;
+        const xC = xLeft + a * scale;
+        const yD = yBase - h * scale;
+        return { a, b, h, R, xC, yD, equal: Math.abs(a - b) < 0.051 };
+      }
+      function setAttr(id, attrs) { Object.entries(attrs).forEach(([key, value]) => $(id).setAttribute(key, String(value))); }
+      function drawGrid() {
+        const g = $('grid');
+        let html = '';
+        for (let x = xLeft; x <= xRight; x += 45) html += `<line class="grid-line" x1="${x}" y1="62" x2="${x}" y2="330"></line>`;
+        for (let y = 60; y <= 330; y += 45) html += `<line class="grid-line" x1="90" y1="${y}" x2="630" y2="${y}"></line>`;
+        g.innerHTML = html;
+      }
+      async function typesetRoot(root) {
+        if (!root || !root.textContent.trim() || !window.MathJax) return;
+        await MathJax.startup.promise;
+        MathJax.typesetClear([root]);
+        await MathJax.typesetPromise([root]);
+      }
+      function updateState() {
+        const s = geometryState();
+        setAttr('topPoint', { cx: s.xC, cy: s.yD });
+        setAttr('dragPoint', { cx: s.xC, cy: yBase });
+        setAttr('heightLine', { x1: s.xC, y1: yBase, x2: s.xC, y2: s.yD });
+        setAttr('radiusLine', { x1: 360, y1: 330, x2: s.xC, y2: s.yD });
+        setAttr('aLabel', { x: xLeft + (s.xC - xLeft) / 2 - 8, y: 352 });
+        setAttr('bLabel', { x: s.xC + (xRight - s.xC) / 2 - 8, y: 352 });
+        setAttr('hLabel', { x: s.xC + 12, y: (yBase + s.yD) / 2 + 6 });
+        setAttr('rLabel', { x: (360 + s.xC) / 2 + 10, y: (330 + s.yD) / 2 - 3 });
+
+        els.aValue.value = fmt(s.a, 1); els.bValue.value = fmt(s.b, 1);
+        els.aRange.value = s.a; els.bRange.value = s.b;
+        els.sumValue.textContent = fmt(s.a + s.b, 1);
+        els.radiusValue.textContent = fmt(s.R, 1);
+        els.geoValue.textContent = fmt(s.h, 2);
+        els.arithValue.textContent = fmt(s.R, 2);
+        els.gapValue.textContent = fmt(s.R - s.h, 2);
+        els.mainFormula.innerHTML = `<div class="formula-line">\\[h=\\sqrt{ab}=${fmt(s.h,2)}\\]</div><div class="formula-line secondary">\\[\\sqrt{ab}\\;\\leq\\;R=\\frac{a+b}{2}\\]</div>`;
+        if (s.equal) {
+          els.equalityState.classList.add('equal');
+          els.stateTitle.textContent = '等号成立';
+          els.stateTitle.style.color = 'var(--accent-text)';
+          els.stateDetail.textContent = 'a=b，几何平均数=算术平均数';
+          els.callout.innerHTML = '分点在<strong>中点</strong>：h = R，几何平均数 = 算术平均数，等号成立。';
+        } else {
+          els.equalityState.classList.remove('equal');
+          els.stateTitle.textContent = '不等式成立';
+          els.stateTitle.style.color = 'var(--text)';
+          els.stateDetail.textContent = '当且仅当 a=b 时取等号';
+          els.callout.innerHTML = '半圆上任意点到圆心距离恒为 R，垂高 h 不超过 R。';
+        }
+        window.__interactionState = { model: 'semicircle', a: s.a, b: s.b, h: s.h, radius: s.R, equality: s.equal, autoPlaying, autoDirection, visualSignature: `${fmt(s.a,1)}-${fmt(s.b,1)}-${fmt(s.h,2)}` };
+        typesetRoot(els.formulaRoot).catch(err => console.error('MathJax update failed', err));
+      }
+      function setA(nextA) {
+        a = Math.max(1, Math.min(11, Number(nextA)));
+        updateState();
+        document.querySelectorAll('.example-btn').forEach(btn => btn.classList.toggle('active', Math.abs(Number(btn.dataset.a) - a) < 0.051));
+      }
+      function updateAutoButton() {
+        els.autoBtn.textContent = autoPlaying ? '暂停自动移动' : '自动移动';
+        els.autoBtn.setAttribute('aria-pressed', String(autoPlaying));
+        els.autoBtn.classList.toggle('primary', !autoPlaying);
+      }
+      function stopAuto() {
+        autoPlaying = false;
+        autoLastTime = 0;
+        updateAutoButton();
+      }
+      function autoStep(time) {
+        if (!autoPlaying) return;
+        if (!autoLastTime) autoLastTime = time;
+        const delta = Math.min(0.05, (time - autoLastTime) / 1000);
+        autoLastTime = time;
+        const nextA = a + autoDirection * autoSpeed * delta;
+        if (nextA >= 11) {
+          a = 11;
+          autoDirection = -1;
+        } else if (nextA <= 1) {
+          a = 1;
+          autoDirection = 1;
+        } else {
+          a = nextA;
+        }
+        setA(a);
+        window.requestAnimationFrame(autoStep);
+      }
+      function toggleAuto() {
+        if (autoPlaying) {
+          stopAuto();
+          updateState();
+          return;
+        }
+        if (a >= 10.99) autoDirection = -1;
+        if (a <= 1.01) autoDirection = 1;
+        autoPlaying = true;
+        autoLastTime = 0;
+        updateAutoButton();
+        window.requestAnimationFrame(autoStep);
+        updateState();
+      }
+      function pointerToA(event) {
+        const rect = svg.getBoundingClientRect();
+        const localX = (event.clientX - rect.left) / rect.width * 720;
+        return (localX - xLeft) / scale;
+      }
+      els.dragPoint.addEventListener('pointerdown', (event) => {
+        stopAuto();
+        dragActive = true;
+        els.dragPoint.setPointerCapture?.(event.pointerId);
+        event.preventDefault();
+      });
+      window.addEventListener('pointermove', (event) => {
+        if (!dragActive) return;
+        setA(pointerToA(event));
+      });
+      window.addEventListener('pointerup', () => { dragActive = false; });
+      els.dragPoint.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowLeft') { event.preventDefault(); stopAuto(); setA(a - .1); }
+        if (event.key === 'ArrowRight') { event.preventDefault(); stopAuto(); setA(a + .1); }
+      });
+      window.addEventListener('keydown', (event) => {
+        if (event.code === 'Space' && !['INPUT', 'BUTTON'].includes(document.activeElement?.tagName)) {
+          event.preventDefault();
+          toggleAuto();
+        }
+      });
+      els.aRange.addEventListener('input', (event) => { stopAuto(); setA(event.target.value); });
+      els.bRange.addEventListener('input', (event) => { stopAuto(); setA(total - Number(event.target.value)); });
+      document.querySelectorAll('.example-btn').forEach(btn => btn.addEventListener('click', () => { stopAuto(); setA(btn.dataset.a); }));
+      els.autoBtn.addEventListener('click', toggleAuto);
+      $('resetBtn').addEventListener('click', () => { stopAuto(); exampleIndex = 1; setA(4); });
+      $('exampleBtn').addEventListener('click', () => { stopAuto(); exampleIndex = (exampleIndex + 1) % examples.length; setA(examples[exampleIndex]); });
+      drawGrid();
+      updateAutoButton();
+      updateState();
+    })();
+  </script>
+</body>
+</html>

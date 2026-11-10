@@ -1,6 +1,6 @@
 // ---------- 配置 ----------
 const TEXTBOOKS = ["必修1", "必修2", "选择性必修1", "选择性必修2", "选择性必修3"];
-const KNOWLEDGE_CATEGORIES = ["立体几何", "解析几何", "概率统计"]; // 后续逐步补充其它知识点大类
+const KNOWLEDGE_CATEGORIES = ["函数", "三角函数", "不等式", "解三角形", "立体几何", "解析几何", "导数", "概率统计"];
 
 // ---------- 状态 ----------
 const state = {
@@ -145,7 +145,7 @@ function renderDetail(subTopic) {
       }
       if (t.interactive === "iframe" && t.embedSrc) {
         html += `<h3 class="section-subtitle">动手试一试</h3>`;
-        html += `<div class="embed-panel"><iframe src="${t.embedSrc}" loading="lazy" title="${t.title}"></iframe></div>`;
+        html += `<div class="embed-panel"><iframe src="${t.embedSrc}" loading="lazy" title="${t.title}" style="height:${t.embedHeight || 720}px"></iframe></div>`;
       }
       if (t.diagramType === "cube" && Array.isArray(t.diagrams)) {
         html += `<h3 class="section-subtitle">几种典型截面归纳</h3>`;

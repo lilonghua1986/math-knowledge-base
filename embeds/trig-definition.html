@@ -1,0 +1,903 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>三角函数交互式教学动画</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Anime.js 动画库（入场动画） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#2563eb',
+            sinColor: '#f59e0b',
+            cosColor: '#2563eb',
+            tanColor: '#db2777'
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background-color: #f8fafc;
+      color: #475569;
+    }
+
+    .gradient-title {
+      background: linear-gradient(135deg, #2563eb, #1e293b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .control-panel {
+      background: #eef4ff;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(30, 41, 59, 0.06);
+    }
+
+    .canvas-container {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      box-shadow: 0 10px 25px rgba(30, 41, 59, 0.06);
+      position: relative;
+    }
+
+    .btn-control {
+      transition: all 0.3s ease;
+      border-radius: 12px;
+    }
+
+    .btn-control:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 16px rgba(30, 41, 59, 0.12);
+    }
+
+    .btn-control:active {
+      transform: scale(0.95);
+    }
+
+    .slider-custom {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 100%;
+      height: 8px;
+      border-radius: 4px;
+      background: linear-gradient(to right, #e2e8f0, #2563eb);
+      outline: none;
+    }
+
+    .slider-custom::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #2563eb;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
+
+    .slider-custom::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #2563eb;
+      cursor: pointer;
+      box-shadow: 0 2px 8px rgba(37, 99, 235, 0.4);
+    }
+
+    .function-checkbox {
+      width: 20px;
+      height: 20px;
+      cursor: pointer;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .special-angle-btn {
+      transition: all 0.2s ease;
+    }
+
+    .special-angle-btn:hover {
+      background: #2563eb;
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .value-display {
+      font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      font-variant-numeric: tabular-nums;
+      font-weight: 600;
+    }
+
+    .knowledge-list {
+      list-style: disc;
+      padding-left: 1.1rem;
+      color: #475569;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+
+    @media (max-width: 768px) {
+      html {
+        font-size: 14px;
+      }
+
+      .canvas-container canvas {
+        width: 100% !important;
+        height: auto !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-50">
+  <main class="container mx-auto px-4 py-8">
+    <!-- 标题区域 -->
+    <header class="text-center mb-8">
+      <h1 class="text-4xl md:text-5xl font-bold gradient-title mb-3">三角函数交互式教学</h1>
+      <p class="text-gray-600 text-lg">拖动角度，观察单位圆上的点如何定义正弦、余弦、正切</p>
+    </header>
+
+    <!-- 主内容区域 -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <!-- 左侧：单位圆和三角形 -->
+      <div class="lg:col-span-2">
+        <div class="canvas-container p-6">
+          <h2 class="text-xl font-semibold mb-4" style="color:#1e293b;">单位圆与三角函数</h2>
+          <canvas id="unitCircleCanvas" width="700" height="500"></canvas>
+        </div>
+
+        <!-- 函数图像 -->
+        <div class="canvas-container p-6 mt-6">
+          <h2 class="text-xl font-semibold mb-4" style="color:#1e293b;">函数图像</h2>
+          <canvas id="graphCanvas" width="700" height="350"></canvas>
+        </div>
+      </div>
+
+      <!-- 右侧：控制面板 -->
+      <div class="lg:col-span-1">
+        <div class="control-panel p-6 sticky top-4">
+          <h2 class="text-xl font-semibold mb-6" style="color:#1e293b;">控制面板</h2>
+
+          <!-- 角度控制 -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-2" style="color:#475569;">角度控制</label>
+            <div class="flex items-center gap-3 mb-3">
+              <input type="range" id="angleSlider" class="slider-custom flex-1" min="0" max="720" value="45" step="1">
+              <input type="number" id="angleInput" class="w-20 px-3 py-2 border rounded-lg text-center" style="border-color:#e2e8f0;" value="45" min="0" max="720">
+              <span class="text-sm" style="color:#475569;">°</span>
+            </div>
+            <div class="text-sm mb-2" style="color:#475569;">弧度: <span id="radianDisplay" class="value-display text-primary">0.79</span></div>
+          </div>
+
+          <!-- 特殊角度快捷按钮 -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-2" style="color:#475569;">特殊角度</label>
+            <div class="grid grid-cols-3 gap-2">
+              <button class="special-angle-btn px-3 py-2 bg-white border rounded-lg text-sm" style="border-color:#e2e8f0;" data-angle="0">0°</button>
+              <button class="special-angle-btn px-3 py-2 bg-white border rounded-lg text-sm" style="border-color:#e2e8f0;" data-angle="30">30°</button>
+              <button class="special-angle-btn px-3 py-2 bg-white border rounded-lg text-sm" style="border-color:#e2e8f0;" data-angle="45">45°</button>
+              <button class="special-angle-btn px-3 py-2 bg-white border rounded-lg text-sm" style="border-color:#e2e8f0;" data-angle="60">60°</button>
+              <button class="special-angle-btn px-3 py-2 bg-white border rounded-lg text-sm" style="border-color:#e2e8f0;" data-angle="90">90°</button>
+              <button class="special-angle-btn px-3 py-2 bg-white border rounded-lg text-sm" style="border-color:#e2e8f0;" data-angle="180">180°</button>
+              <button class="special-angle-btn px-3 py-2 bg-white border rounded-lg text-sm" style="border-color:#e2e8f0;" data-angle="270">270°</button>
+              <button class="special-angle-btn px-3 py-2 bg-white border rounded-lg text-sm" style="border-color:#e2e8f0;" data-angle="360">360°</button>
+            </div>
+          </div>
+
+          <!-- 函数值显示 -->
+          <div class="mb-6 bg-white rounded-xl p-4 border" style="border-color:#e2e8f0;">
+            <h3 class="text-sm font-semibold mb-3" style="color:#1e293b;">函数值</h3>
+            <div class="space-y-2">
+              <div class="flex justify-between items-center">
+                <span class="text-sm" style="color:#f59e0b;">sin θ =</span>
+                <span id="sinValue" class="value-display text-lg" style="color:#f59e0b;">0.707</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm" style="color:#2563eb;">cos θ =</span>
+                <span id="cosValue" class="value-display text-lg" style="color:#2563eb;">0.707</span>
+              </div>
+              <div class="flex justify-between items-center">
+                <span class="text-sm" style="color:#db2777;">tan θ =</span>
+                <span id="tanValue" class="value-display text-lg" style="color:#db2777;">1.000</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 函数显示控制 -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-3" style="color:#475569;">显示函数</label>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="showSin" class="function-checkbox" checked style="accent-color:#f59e0b;">
+                <span class="text-sm" style="color:#f59e0b;">正弦函数 (sin)</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="showCos" class="function-checkbox" checked style="accent-color:#2563eb;">
+                <span class="text-sm" style="color:#2563eb;">余弦函数 (cos)</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="showTan" class="function-checkbox" checked style="accent-color:#db2777;">
+                <span class="text-sm" style="color:#db2777;">正切函数 (tan)</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- 动画控制 -->
+          <div class="mb-6">
+            <label class="block text-sm font-medium mb-3" style="color:#475569;">动画控制</label>
+            <div class="flex gap-2 mb-3">
+              <button id="playBtn" class="btn-control flex-1 px-4 py-2 bg-primary text-white font-medium">▶ 播放</button>
+              <button id="pauseBtn" class="btn-control flex-1 px-4 py-2 text-white font-medium" style="background:#64748b;" disabled>⏸ 暂停</button>
+              <button id="resetBtn" class="btn-control px-4 py-2 text-white font-medium" style="background:#94a3b8;">↻ 重置</button>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="text-sm" style="color:#475569;">速度:</label>
+              <select id="speedSelect" class="flex-1 px-3 py-2 border rounded-lg text-sm" style="border-color:#e2e8f0;">
+                <option value="0.5">0.5x</option>
+                <option value="1" selected>1x</option>
+                <option value="2">2x</option>
+                <option value="3">3x</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- 显示选项 -->
+          <div>
+            <label class="block text-sm font-medium mb-3" style="color:#475569;">显示选项</label>
+            <div class="space-y-2">
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="showGrid" class="function-checkbox" checked>
+                <span class="text-sm" style="color:#475569;">网格线</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="showLabels" class="function-checkbox" checked>
+                <span class="text-sm" style="color:#475569;">标签</span>
+              </label>
+              <label class="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" id="showTrail" class="function-checkbox">
+                <span class="text-sm" style="color:#475569;">轨迹跟踪</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 说明区域 -->
+    <div class="mt-8 bg-white rounded-2xl p-6 border" style="border-color:#e2e8f0;">
+      <h2 class="text-2xl font-bold mb-4" style="color:#1e293b;">三角函数知识点</h2>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div style="border-left:4px solid #f59e0b; padding-left:1rem;">
+          <h3 class="font-semibold text-lg mb-2" style="color:#f59e0b;">正弦 sin θ</h3>
+          <ul class="knowledge-list">
+            <li>单位圆上点的 <strong>y 坐标</strong></li>
+            <li>值域 <strong>[-1, 1]</strong>，周期 <strong>2π</strong></li>
+          </ul>
+        </div>
+        <div style="border-left:4px solid #2563eb; padding-left:1rem;">
+          <h3 class="font-semibold text-lg mb-2" style="color:#2563eb;">余弦 cos θ</h3>
+          <ul class="knowledge-list">
+            <li>单位圆上点的 <strong>x 坐标</strong></li>
+            <li>值域 <strong>[-1, 1]</strong>，周期 <strong>2π</strong></li>
+          </ul>
+        </div>
+        <div style="border-left:4px solid #db2777; padding-left:1rem;">
+          <h3 class="font-semibold text-lg mb-2" style="color:#db2777;">正切 tan θ</h3>
+          <ul class="knowledge-list">
+            <li><strong>y / x</strong>，即终边的斜率</li>
+            <li>值域 <strong>(-∞, +∞)</strong>，周期 <strong>π</strong></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script type="module">
+    // ========== 全局配置 ==========
+    const CONFIG = {
+      unitCircle: {
+        centerX: 350,
+        centerY: 250,
+        radius: 150,
+        colors: {
+          circle: '#1e293b',
+          axis: '#1e293b',
+          grid: '#e2e8f0',
+          angle: '#2563eb',
+          sin: '#f59e0b',
+          cos: '#2563eb',
+          tan: '#db2777',
+          triangle: '#94a3b8',
+          point: '#1e293b'
+        }
+      },
+      graph: {
+        centerX: 50,
+        centerY: 175,
+        width: 600,
+        height: 300,
+        scaleX: 80,
+        scaleY: 120,
+        colors: {
+          axis: '#1e293b',
+          grid: '#e2e8f0',
+          sin: '#f59e0b',
+          cos: '#2563eb',
+          tan: '#db2777'
+        }
+      }
+    };
+
+    // ========== 状态管理 ==========
+    const state = {
+      angle: 45,
+      isPlaying: false,
+      speed: 1,
+      showFunctions: {
+        sin: true,
+        cos: true,
+        tan: true
+      },
+      showGrid: true,
+      showLabels: true,
+      showTrail: false,
+      trail: []
+    };
+
+    // ========== Canvas 初始化 ==========
+    const unitCircleCanvas = document.getElementById('unitCircleCanvas');
+    const unitCircleCtx = unitCircleCanvas.getContext('2d');
+    const graphCanvas = document.getElementById('graphCanvas');
+    const graphCtx = graphCanvas.getContext('2d');
+
+    // ========== 工具函数 ==========
+    function degToRad(deg) {
+      return deg * Math.PI / 180;
+    }
+
+    function radToDeg(rad) {
+      return rad * 180 / Math.PI;
+    }
+
+    function formatNumber(num, decimals = 3) {
+      if (Math.abs(num) > 1000) return '∞';
+      return num.toFixed(decimals);
+    }
+
+    // ========== 单位圆绘制 ==========
+    function drawUnitCircle() {
+      const ctx = unitCircleCtx;
+      const cfg = CONFIG.unitCircle;
+
+      ctx.clearRect(0, 0, unitCircleCanvas.width, unitCircleCanvas.height);
+
+      // 绘制网格
+      if (state.showGrid) {
+        ctx.strokeStyle = cfg.colors.grid;
+        ctx.lineWidth = 1;
+        for (let i = -2; i <= 2; i++) {
+          if (i === 0) continue;
+          // 垂直线
+          ctx.beginPath();
+          ctx.moveTo(cfg.centerX + i * cfg.radius / 2, cfg.centerY - cfg.radius - 20);
+          ctx.lineTo(cfg.centerX + i * cfg.radius / 2, cfg.centerY + cfg.radius + 20);
+          ctx.stroke();
+          // 水平线
+          ctx.beginPath();
+          ctx.moveTo(cfg.centerX - cfg.radius - 20, cfg.centerY + i * cfg.radius / 2);
+          ctx.lineTo(cfg.centerX + cfg.radius + 20, cfg.centerY + i * cfg.radius / 2);
+          ctx.stroke();
+        }
+      }
+
+      // 绘制坐标轴
+      ctx.strokeStyle = cfg.colors.axis;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cfg.centerX - cfg.radius - 20, cfg.centerY);
+      ctx.lineTo(cfg.centerX + cfg.radius + 20, cfg.centerY);
+      ctx.moveTo(cfg.centerX, cfg.centerY - cfg.radius - 20);
+      ctx.lineTo(cfg.centerX, cfg.centerY + cfg.radius + 20);
+      ctx.stroke();
+
+      // 绘制箭头
+      drawArrow(ctx, cfg.centerX + cfg.radius + 20, cfg.centerY, 10, 0);
+      drawArrow(ctx, cfg.centerX, cfg.centerY - cfg.radius - 20, 10, -Math.PI / 2);
+
+      // 绘制单位圆
+      ctx.strokeStyle = cfg.colors.circle;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cfg.centerX, cfg.centerY, cfg.radius, 0, Math.PI * 2);
+      ctx.stroke();
+
+      // 标注坐标轴
+      if (state.showLabels) {
+        ctx.fillStyle = cfg.colors.axis;
+        ctx.font = '14px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('x', cfg.centerX + cfg.radius + 30, cfg.centerY + 5);
+        ctx.fillText('y', cfg.centerX - 5, cfg.centerY - cfg.radius - 25);
+        ctx.fillText('0', cfg.centerX - 15, cfg.centerY + 15);
+        ctx.fillText('1', cfg.centerX + cfg.radius, cfg.centerY + 20);
+        ctx.fillText('-1', cfg.centerX - cfg.radius, cfg.centerY + 20);
+      }
+
+      // 计算当前角度的点坐标
+      const rad = degToRad(state.angle);
+      const x = cfg.centerX + cfg.radius * Math.cos(rad);
+      const y = cfg.centerY - cfg.radius * Math.sin(rad);
+
+      // 绘制角度弧线
+      ctx.strokeStyle = cfg.colors.angle;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(cfg.centerX, cfg.centerY, 40, 0, -rad, rad > 0);
+      ctx.stroke();
+
+      // 绘制半径
+      ctx.strokeStyle = cfg.colors.point;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cfg.centerX, cfg.centerY);
+      ctx.lineTo(x, y);
+      ctx.stroke();
+
+      // 绘制直角三角形
+      ctx.strokeStyle = cfg.colors.triangle;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash([5, 5]);
+
+      // 垂线（sin）
+      if (state.showFunctions.sin) {
+        ctx.strokeStyle = cfg.colors.sin;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x, cfg.centerY);
+        ctx.stroke();
+      }
+
+      // 水平线（cos）
+      if (state.showFunctions.cos) {
+        ctx.strokeStyle = cfg.colors.cos;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(cfg.centerX, cfg.centerY);
+        ctx.lineTo(x, cfg.centerY);
+        ctx.stroke();
+      }
+
+      ctx.setLineDash([]);
+
+      // 绘制直角标记
+      const rectSize = 10;
+      ctx.strokeStyle = cfg.colors.triangle;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x - rectSize, cfg.centerY - rectSize, rectSize, rectSize);
+
+      // 绘制点
+      ctx.fillStyle = cfg.colors.point;
+      ctx.beginPath();
+      ctx.arc(x, y, 6, 0, Math.PI * 2);
+      ctx.fill();
+
+      // 绘制轨迹
+      if (state.showTrail && state.trail.length > 0) {
+        ctx.strokeStyle = 'rgba(30, 41, 59, 0.3)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(state.trail[0].x, state.trail[0].y);
+        for (let i = 1; i < state.trail.length; i++) {
+          ctx.lineTo(state.trail[i].x, state.trail[i].y);
+        }
+        ctx.stroke();
+      }
+
+      // 标注函数值
+      if (state.showLabels) {
+        const sinVal = Math.sin(rad);
+        const cosVal = Math.cos(rad);
+
+        ctx.font = 'bold 14px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+
+        if (state.showFunctions.sin) {
+          ctx.fillStyle = cfg.colors.sin;
+          ctx.textAlign = 'left';
+          ctx.fillText(`sin θ = ${formatNumber(sinVal)}`, x + 10, (y + cfg.centerY) / 2);
+        }
+
+        if (state.showFunctions.cos) {
+          ctx.fillStyle = cfg.colors.cos;
+          ctx.textAlign = 'center';
+          ctx.fillText(`cos θ = ${formatNumber(cosVal)}`, (cfg.centerX + x) / 2, cfg.centerY + 20);
+        }
+      }
+    }
+
+    function drawArrow(ctx, x, y, size, angle) {
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(-size, -size / 2);
+      ctx.lineTo(-size, size / 2);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // ========== 函数图像绘制 ==========
+    function drawGraph() {
+      const ctx = graphCtx;
+      const cfg = CONFIG.graph;
+
+      ctx.clearRect(0, 0, graphCanvas.width, graphCanvas.height);
+
+      // 绘制网格
+      if (state.showGrid) {
+        ctx.strokeStyle = cfg.colors.grid;
+        ctx.lineWidth = 1;
+
+        // 垂直网格线（每π/2）
+        for (let i = 0; i <= 8; i++) {
+          const x = cfg.centerX + i * cfg.scaleX;
+          ctx.beginPath();
+          ctx.moveTo(x, cfg.centerY - cfg.height / 2);
+          ctx.lineTo(x, cfg.centerY + cfg.height / 2);
+          ctx.stroke();
+        }
+
+        // 水平网格线
+        for (let i = -1; i <= 1; i++) {
+          const y = cfg.centerY - i * cfg.scaleY;
+          ctx.beginPath();
+          ctx.moveTo(cfg.centerX, y);
+          ctx.lineTo(cfg.centerX + cfg.width, y);
+          ctx.stroke();
+        }
+      }
+
+      // 绘制坐标轴
+      ctx.strokeStyle = cfg.colors.axis;
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(cfg.centerX, cfg.centerY - cfg.height / 2 - 10);
+      ctx.lineTo(cfg.centerX, cfg.centerY + cfg.height / 2 + 10);
+      ctx.moveTo(cfg.centerX, cfg.centerY);
+      ctx.lineTo(cfg.centerX + cfg.width + 10, cfg.centerY);
+      ctx.stroke();
+
+      // 标注坐标轴
+      if (state.showLabels) {
+        ctx.fillStyle = cfg.colors.axis;
+        ctx.font = '12px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
+        ctx.textAlign = 'center';
+
+        // x轴标注
+        const labels = ['0', 'π/2', 'π', '3π/2', '2π', '5π/2', '3π', '7π/2', '4π'];
+        for (let i = 0; i < labels.length; i++) {
+          const x = cfg.centerX + i * cfg.scaleX;
+          ctx.fillText(labels[i], x, cfg.centerY + 20);
+        }
+
+        // y轴标注
+        ctx.textAlign = 'right';
+        ctx.fillText('1', cfg.centerX - 5, cfg.centerY - cfg.scaleY + 5);
+        ctx.fillText('0', cfg.centerX - 5, cfg.centerY + 5);
+        ctx.fillText('-1', cfg.centerX - 5, cfg.centerY + cfg.scaleY + 5);
+      }
+
+      // 绘制函数曲线
+      const currentRad = degToRad(state.angle);
+
+      // 正弦曲线
+      if (state.showFunctions.sin) {
+        ctx.strokeStyle = cfg.colors.sin;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let angle = 0; angle <= 720; angle += 1) {
+          const rad = degToRad(angle);
+          const x = cfg.centerX + rad * cfg.scaleX / (Math.PI / 2);
+          const y = cfg.centerY - Math.sin(rad) * cfg.scaleY;
+          if (angle === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+      }
+
+      // 余弦曲线
+      if (state.showFunctions.cos) {
+        ctx.strokeStyle = cfg.colors.cos;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        for (let angle = 0; angle <= 720; angle += 1) {
+          const rad = degToRad(angle);
+          const x = cfg.centerX + rad * cfg.scaleX / (Math.PI / 2);
+          const y = cfg.centerY - Math.cos(rad) * cfg.scaleY;
+          if (angle === 0) {
+            ctx.moveTo(x, y);
+          } else {
+            ctx.lineTo(x, y);
+          }
+        }
+        ctx.stroke();
+      }
+
+      // 正切曲线（分段绘制，避免渐近线）
+      if (state.showFunctions.tan) {
+        ctx.strokeStyle = cfg.colors.tan;
+        ctx.lineWidth = 3;
+
+        for (let segment = 0; segment < 8; segment++) {
+          ctx.beginPath();
+          const startAngle = segment * 90 + 1;
+          const endAngle = (segment + 1) * 90 - 1;
+
+          for (let angle = startAngle; angle <= endAngle; angle += 1) {
+            const rad = degToRad(angle);
+            const tanVal = Math.tan(rad);
+
+            if (Math.abs(tanVal) > 3) continue;
+
+            const x = cfg.centerX + rad * cfg.scaleX / (Math.PI / 2);
+            const y = cfg.centerY - tanVal * cfg.scaleY;
+
+            if (angle === startAngle) {
+              ctx.moveTo(x, y);
+            } else {
+              ctx.lineTo(x, y);
+            }
+          }
+          ctx.stroke();
+        }
+
+        // 绘制渐近线
+        ctx.strokeStyle = 'rgba(219, 39, 119, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([5, 5]);
+        for (let i = 1; i <= 7; i += 2) {
+          const x = cfg.centerX + i * cfg.scaleX;
+          ctx.beginPath();
+          ctx.moveTo(x, cfg.centerY - cfg.height / 2);
+          ctx.lineTo(x, cfg.centerY + cfg.height / 2);
+          ctx.stroke();
+        }
+        ctx.setLineDash([]);
+      }
+
+      // 绘制当前角度指示线
+      const currentX = cfg.centerX + currentRad * cfg.scaleX / (Math.PI / 2);
+      ctx.strokeStyle = '#1e293b';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(currentX, cfg.centerY - cfg.height / 2);
+      ctx.lineTo(currentX, cfg.centerY + cfg.height / 2);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // 绘制当前点
+      if (state.showFunctions.sin) {
+        const sinY = cfg.centerY - Math.sin(currentRad) * cfg.scaleY;
+        ctx.fillStyle = cfg.colors.sin;
+        ctx.beginPath();
+        ctx.arc(currentX, sinY, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (state.showFunctions.cos) {
+        const cosY = cfg.centerY - Math.cos(currentRad) * cfg.scaleY;
+        ctx.fillStyle = cfg.colors.cos;
+        ctx.beginPath();
+        ctx.arc(currentX, cosY, 5, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      if (state.showFunctions.tan) {
+        const tanVal = Math.tan(currentRad);
+        if (Math.abs(tanVal) <= 3) {
+          const tanY = cfg.centerY - tanVal * cfg.scaleY;
+          ctx.fillStyle = cfg.colors.tan;
+          ctx.beginPath();
+          ctx.arc(currentX, tanY, 5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+    }
+
+    // ========== 更新显示 ==========
+    function updateDisplay() {
+      const rad = degToRad(state.angle);
+      const sinVal = Math.sin(rad);
+      const cosVal = Math.cos(rad);
+      const tanVal = Math.tan(rad);
+
+      // 更新数值显示
+      document.getElementById('radianDisplay').textContent = formatNumber(rad);
+      document.getElementById('sinValue').textContent = formatNumber(sinVal);
+      document.getElementById('cosValue').textContent = formatNumber(cosVal);
+      document.getElementById('tanValue').textContent = formatNumber(tanVal);
+
+      // 更新轨迹
+      if (state.showTrail) {
+        const cfg = CONFIG.unitCircle;
+        const x = cfg.centerX + cfg.radius * Math.cos(rad);
+        const y = cfg.centerY - cfg.radius * Math.sin(rad);
+        state.trail.push({ x, y });
+        if (state.trail.length > 100) {
+          state.trail.shift();
+        }
+      } else {
+        state.trail = [];
+      }
+
+      // 重绘
+      drawUnitCircle();
+      drawGraph();
+    }
+
+    // ========== 动画控制 ==========
+    let animationId = null;
+
+    function animate() {
+      if (!state.isPlaying) return;
+
+      state.angle += 0.5 * state.speed;
+      if (state.angle > 720) state.angle = 0;
+
+      document.getElementById('angleSlider').value = state.angle;
+      document.getElementById('angleInput').value = Math.round(state.angle);
+
+      updateDisplay();
+
+      animationId = requestAnimationFrame(animate);
+    }
+
+    function startAnimation() {
+      state.isPlaying = true;
+      document.getElementById('playBtn').disabled = true;
+      document.getElementById('pauseBtn').disabled = false;
+      animate();
+    }
+
+    function pauseAnimation() {
+      state.isPlaying = false;
+      document.getElementById('playBtn').disabled = false;
+      document.getElementById('pauseBtn').disabled = true;
+      if (animationId) {
+        cancelAnimationFrame(animationId);
+      }
+    }
+
+    function resetAnimation() {
+      pauseAnimation();
+      state.angle = 0;
+      state.trail = [];
+      document.getElementById('angleSlider').value = 0;
+      document.getElementById('angleInput').value = 0;
+      updateDisplay();
+    }
+
+    // ========== 事件监听 ==========
+    document.getElementById('angleSlider').addEventListener('input', (e) => {
+      state.angle = parseFloat(e.target.value);
+      document.getElementById('angleInput').value = Math.round(state.angle);
+      updateDisplay();
+    });
+
+    document.getElementById('angleInput').addEventListener('input', (e) => {
+      let value = parseFloat(e.target.value) || 0;
+      value = Math.max(0, Math.min(720, value));
+      state.angle = value;
+      document.getElementById('angleSlider').value = value;
+      updateDisplay();
+    });
+
+    document.querySelectorAll('.special-angle-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        state.angle = parseFloat(btn.dataset.angle);
+        document.getElementById('angleSlider').value = state.angle;
+        document.getElementById('angleInput').value = state.angle;
+        updateDisplay();
+      });
+    });
+
+    document.getElementById('showSin').addEventListener('change', (e) => {
+      state.showFunctions.sin = e.target.checked;
+      updateDisplay();
+    });
+
+    document.getElementById('showCos').addEventListener('change', (e) => {
+      state.showFunctions.cos = e.target.checked;
+      updateDisplay();
+    });
+
+    document.getElementById('showTan').addEventListener('change', (e) => {
+      state.showFunctions.tan = e.target.checked;
+      updateDisplay();
+    });
+
+    document.getElementById('showGrid').addEventListener('change', (e) => {
+      state.showGrid = e.target.checked;
+      updateDisplay();
+    });
+
+    document.getElementById('showLabels').addEventListener('change', (e) => {
+      state.showLabels = e.target.checked;
+      updateDisplay();
+    });
+
+    document.getElementById('showTrail').addEventListener('change', (e) => {
+      state.showTrail = e.target.checked;
+      if (!e.target.checked) {
+        state.trail = [];
+      }
+      updateDisplay();
+    });
+
+    document.getElementById('playBtn').addEventListener('click', startAnimation);
+    document.getElementById('pauseBtn').addEventListener('click', pauseAnimation);
+    document.getElementById('resetBtn').addEventListener('click', resetAnimation);
+
+    document.getElementById('speedSelect').addEventListener('change', (e) => {
+      state.speed = parseFloat(e.target.value);
+    });
+
+    // ========== 响应式处理 ==========
+    function handleResize() {
+      if (window.innerWidth < 768) {
+        const scale = window.innerWidth / 800;
+        document.documentElement.style.fontSize = `${14 * scale}px`;
+      } else {
+        document.documentElement.style.fontSize = '16px';
+      }
+    }
+
+    window.addEventListener('resize', handleResize);
+    handleResize();
+
+    // ========== 初始化 ==========
+    updateDisplay();
+
+    // 入场动画
+    anime({
+      targets: '.canvas-container',
+      opacity: [0, 1],
+      translateY: [30, 0],
+      duration: 800,
+      delay: anime.stagger(200),
+      easing: 'easeOutExpo'
+    });
+
+    anime({
+      targets: '.control-panel',
+      opacity: [0, 1],
+      translateX: [50, 0],
+      duration: 800,
+      delay: 400,
+      easing: 'easeOutExpo'
+    });
+  </script>
+</body>
+</html>
